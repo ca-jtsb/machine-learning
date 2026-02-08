@@ -8,11 +8,15 @@
 
 config_version=5
 
+[animation]
+
+compatibility/default_parent_skeleton_in_mesh_instance_3d=true
+
 [application]
 
 config/name="ML"
-run/main_scene="uid://cp8vxqr1djun4"
-config/features=PackedStringArray("4.5", "GL Compatibility")
+run/main_scene="uid://o1yc5kru4uwu"
+config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [dotnet]
