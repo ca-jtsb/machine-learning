@@ -14,7 +14,7 @@ var is_moving: bool = false
 
 func _ready() -> void:
 	# Start at grid position (5, 5)
-	grid_position = Vector2i(5, 5)
+	grid_position = Vector2i(2,6)
 	position = grid_to_world(grid_position)
 	target_position = position
 	print("Robot ready at grid position: ", grid_position)
@@ -73,7 +73,7 @@ func _move(direction: Direction) -> void:
 
 func grid_to_world(grid_pos: Vector2i) -> Vector2:
 	# Center the grid (0,0) at world origin
-	return Vector2(grid_pos) * TILE_SIZE
+	return Vector2(grid_pos) * 64 + Vector2(32, 32)
 
 func _direction_to_offset(dir: Direction) -> Vector2i:
 	match dir:

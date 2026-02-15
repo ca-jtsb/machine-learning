@@ -1,8 +1,9 @@
-[gd_scene load_steps=7 format=4 uid="uid://d0fsid0bhbstv"]
+[gd_scene load_steps=8 format=4 uid="uid://d0fsid0bhbstv"]
 
 [ext_resource type="PackedScene" uid="uid://dkxh5kasp4od8" path="res://scenes/robot.tscn" id="1_0wfyh"]
 [ext_resource type="Texture2D" uid="uid://bt5yq4y5f5rh4" path="res://assets/tiles/temp tile map.png" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://1jfagc3gnff7" path="res://scenes/main.gd" id="1_sugp2"]
+[ext_resource type="Script" uid="uid://co46v7e045yav" path="res://scripts/grid_drawer.gd" id="4_jyhfs"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0wfyh"]
 bg_color = Color(0.101960786, 0.101960786, 0.101960786, 1)
@@ -83,3 +84,4 @@ text = "▶ RUN PROGRAM"
 [node name="GridMap" type="TileMapLayer" parent="GameWorld"]
 tile_map_data = PackedByteArray("AAADAAcAAAAAAAAAAAADAAYAAAAAAAAAAAADAAUAAAAAAAAAAAADAAQAAAAAAAAAAAADAAMAAAAAAAAAAAAEAAMAAAAAAAAAAAAEAAQAAAAAAAAAAAAEAAUAAAAAAAAAAAAEAAcAAAAAAAAAAAAEAAYAAAAAAAAAAAAFAAIAAAAAAAEAAAAEAAEAAAAAAAAAAAAFAAAAAAAAAAAAAAAFAAEAAAAAAAAAAAAEAAAAAAAAAAAAAAAMAAcAAAABAAAAAAA=")
 tile_set = SubResource("TileSet_sugp2")
+script = ExtResource("4_jyhfs")
