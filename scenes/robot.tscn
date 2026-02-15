@@ -1,0 +1,21 @@
+[gd_scene load_steps=5 format=3 uid="uid://dkxh5kasp4od8"]
+
+[ext_resource type="Script" uid="uid://h3ehcssbxfkd" path="res://scripts/robot.gd" id="1_br0rw"]
+
+[sub_resource type="Gradient" id="Gradient_gl0xr"]
+colors = PackedColorArray(0.99215686, 0.5372549, 0.9607843, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_br0rw"]
+gradient = SubResource("Gradient_gl0xr")
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_ykvnc"]
+size = Vector2(32, 32)
+
+[node name="Robot" type="CharacterBody2D"]
+script = ExtResource("1_br0rw")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = SubResource("GradientTexture2D_br0rw")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape2D_ykvnc")

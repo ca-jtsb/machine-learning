@@ -1,0 +1,85 @@
+[gd_scene load_steps=7 format=4 uid="uid://d0fsid0bhbstv"]
+
+[ext_resource type="PackedScene" uid="uid://dkxh5kasp4od8" path="res://scenes/robot.tscn" id="1_0wfyh"]
+[ext_resource type="Texture2D" uid="uid://bt5yq4y5f5rh4" path="res://assets/tiles/temp tile map.png" id="1_o5qli"]
+[ext_resource type="Script" uid="uid://1jfagc3gnff7" path="res://scenes/main.gd" id="1_sugp2"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0wfyh"]
+bg_color = Color(0.101960786, 0.101960786, 0.101960786, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+
+[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_0wfyh"]
+texture = ExtResource("1_o5qli")
+texture_region_size = Vector2i(64, 64)
+0:0/0 = 0
+1:0/0 = 0
+0:1/0 = 0
+
+[sub_resource type="TileSet" id="TileSet_sugp2"]
+tile_size = Vector2i(64, 64)
+sources/0 = SubResource("TileSetAtlasSource_0wfyh")
+
+[node name="Main" type="Node2D"]
+script = ExtResource("1_sugp2")
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="CommandPalette" type="VBoxContainer" parent="UI"]
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_right = 194.0
+grow_vertical = 2
+
+[node name="UpButton" type="Button" parent="UI/CommandPalette"]
+layout_mode = 2
+text = "Move Up ↑"
+
+[node name="DownButton" type="Button" parent="UI/CommandPalette"]
+layout_mode = 2
+text = "Move Down ↓"
+
+[node name="LeftButton" type="Button" parent="UI/CommandPalette"]
+layout_mode = 2
+text = "Move Left ←"
+
+[node name="RightButton" type="Button" parent="UI/CommandPalette"]
+layout_mode = 2
+text = "Move Right →"
+
+[node name="WorkspacePanel" type="PanelContainer" parent="UI"]
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -204.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_0wfyh")
+
+[node name="Workspace" type="HBoxContainer" parent="UI/WorkspacePanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RunButton" type="Button" parent="UI"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -50.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "▶ RUN PROGRAM"
+
+[node name="GameWorld" type="Node2D" parent="."]
+
+[node name="Robot" parent="GameWorld" instance=ExtResource("1_0wfyh")]
+
+[node name="GridMap" type="TileMapLayer" parent="GameWorld"]
+tile_map_data = PackedByteArray("AAADAAcAAAAAAAAAAAADAAYAAAAAAAAAAAADAAUAAAAAAAAAAAADAAQAAAAAAAAAAAADAAMAAAAAAAAAAAAEAAMAAAAAAAAAAAAEAAQAAAAAAAAAAAAEAAUAAAAAAAAAAAAEAAcAAAAAAAAAAAAEAAYAAAAAAAAAAAAFAAIAAAAAAAEAAAAEAAEAAAAAAAAAAAAFAAAAAAAAAAAAAAAFAAEAAAAAAAAAAAAEAAAAAAAAAAAAAAAMAAcAAAABAAAAAAA=")
+tile_set = SubResource("TileSet_sugp2")
