@@ -3,86 +3,86 @@ class_name Robot
 
 signal action_completed
 
-const TILE_SIZE = 64
-const MOVE_SPEED = 4.0  # Tiles per second
+const TILE_SIZE  = 64
+const MOVE_SPEED = 8.0   # tiles per second — raise for faster sliding
 
 enum Direction { UP, DOWN, LEFT, RIGHT }
 
-var grid_position: Vector2i = Vector2i(0, 0)
-var target_position: Vector2 = Vector2.ZERO
-var is_moving: bool = false
+# Grid dimensions must match your TileMapLayer setup
+const GRID_COLS : int = 9
+const GRID_ROWS : int = 6
+
+var grid_position   : Vector2i = Vector2i(1, 4)  # starting cell (col, row)
+var target_position : Vector2  = Vector2.ZERO
+var is_moving       : bool     = false
+
+# Fetched at runtime — node must be named "TileMapLayer" and be a sibling of Robot
+@onready var tilemap : TileMapLayer = get_parent().get_node("GridMap")
 
 func _ready() -> void:
-	# Start at grid position (5, 5)
-	grid_position = Vector2i(2,6)
-	position = grid_to_world(grid_position)
+	position        = grid_to_world(grid_position)
 	target_position = position
-	print("Robot ready at grid position: ", grid_position)
 
 func _physics_process(delta: float) -> void:
 	if is_moving:
-		# Smooth movement to target
 		position = position.move_toward(target_position, MOVE_SPEED * TILE_SIZE * delta)
-		
-		# Check if reached target
 		if position.distance_to(target_position) < 1.0:
-			position = target_position
+			position  = target_position
 			is_moving = false
-			action_completed.emit()
-			print("Move completed. Now at: ", grid_position)
 
-# === PUBLIC METHODS ===
+# ── Public API (called by CommandBlock.execute) ───────────────────────────────
+func move_up()    -> void: await _slide(Direction.UP)
+func move_down()  -> void: await _slide(Direction.DOWN)
+func move_left()  -> void: await _slide(Direction.LEFT)
+func move_right() -> void: await _slide(Direction.RIGHT)
 
-func move_up() -> void:
-	_move(Direction.UP)
-
-func move_down() -> void:
-	_move(Direction.DOWN)
-
-func move_left() -> void:
-	_move(Direction.LEFT)
-
-func move_right() -> void:
-	_move(Direction.RIGHT)
-
-func _move(direction: Direction) -> void:
+# ── Slide until blocked ───────────────────────────────────────────────────────
+func _slide(dir: Direction) -> void:
 	if is_moving:
-		print("Already moving, skipping command")
 		return
-	
-	var offset = _direction_to_offset(direction)
-	var new_grid_pos = grid_position + offset
-	
-	# Simple bounds checking (0-15 grid)
-	if new_grid_pos.x < 0 or new_grid_pos.x > 15:
-		print("Hit boundary!")
-		action_completed.emit()
-		return
-	if new_grid_pos.y < 0 or new_grid_pos.y > 15:
-		print("Hit boundary!")
-		action_completed.emit()
-		return
-	
-	# Valid move
-	grid_position = new_grid_pos
-	target_position = grid_to_world(grid_position)
-	is_moving = true
-	print("Moving to grid position: ", grid_position)
 
-# === HELPER METHODS ===
+	var offset : Vector2i = _dir_to_offset(dir)
 
-func grid_to_world(grid_pos: Vector2i) -> Vector2:
-	# Center the grid (0,0) at world origin
-	return Vector2(grid_pos) * 64 + Vector2(32, 32)
+	while true:
+		var next_cell : Vector2i = grid_position + offset
 
-func _direction_to_offset(dir: Direction) -> Vector2i:
+		if _is_blocked(next_cell):
+			break          # wall or boundary ahead — stop
+
+		# Move one step
+		grid_position   = next_cell
+		target_position = grid_to_world(grid_position)
+		is_moving       = true
+
+		await _wait_for_arrival()   # smooth animation per tile
+
+	action_completed.emit()
+
+func _wait_for_arrival() -> void:
+	while is_moving:
+		await get_tree().process_frame
+
+# ── Obstacle detection ────────────────────────────────────────────────────────
+func _is_blocked(cell: Vector2i) -> bool:
+	# Out-of-bounds
+	if cell.x < 0 or cell.x >= GRID_COLS or cell.y < 0 or cell.y >= GRID_ROWS:
+		return true
+
+	# Any painted tile in the TileMapLayer = wall
+	# get_cell_source_id() returns -1 for empty cells
+	if tilemap and tilemap.get_cell_source_id(cell) != -1:
+		return true
+
+	return false
+
+# ── Helpers ───────────────────────────────────────────────────────────────────
+func grid_to_world(cell: Vector2i) -> Vector2:
+	return Vector2(cell) * TILE_SIZE + Vector2(TILE_SIZE * 0.5, TILE_SIZE * 0.5)
+
+func _dir_to_offset(dir: Direction) -> Vector2i:
 	match dir:
-		Direction.UP:
-			return Vector2i(0, -1)
-		Direction.DOWN:
-			return Vector2i(0, 1)
-		Direction.LEFT:
-			return Vector2i(-1, 0)
-		Direction.RIGHT:
-			return Vector2i(1, 0)
+		Direction.UP:    return Vector2i( 0, -1)
+		Direction.DOWN:  return Vector2i( 0,  1)
+		Direction.LEFT:  return Vector2i(-1,  0)
+		Direction.RIGHT: return Vector2i( 1,  0)
 	return Vector2i.ZERO
