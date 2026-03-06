@@ -19,17 +19,18 @@ extends Node2D
 	"res://levels/level_3.tres",
 ]
 
-var current_level_index : int = 0
+var current_level_index   : int  = 0
 var command_blocks        : Array[CommandBlock] = []
 var is_executing          : bool = false
 var current_command_index : int  = 0
 var total_actions_taken   : int  = 0
 var max_actions           : int  = 8
+var _level_complete       : bool = false  # set true only when portal reached
 
 func _ready() -> void:
-	# DO NOT offset GameWorld here — its position is set in the Godot editor
-	# on the GameWorld node itself (Inspector → Position).
-	# Set GameWorld Position to e.g. Vector2(210, 10) in the Inspector.
+	# Remove leftover Sprite2D from Robot if present
+	var spr = robot.get_node_or_null("Sprite2D")
+	if spr: spr.queue_free()
 
 	btn_up.pressed.connect(func():     _add_cmd(CommandBlock.CommandType.MOVE_UP))
 	btn_down.pressed.connect(func():   _add_cmd(CommandBlock.CommandType.MOVE_DOWN))
@@ -42,8 +43,9 @@ func _ready() -> void:
 	block_manager.level_complete.connect(_on_level_complete)
 	robot.block_manager = block_manager
 
-	_load_level(0)
+	_load_level(current_level_index)
 
+# ── Level loading ──────────────────────────────────────────────────────────────
 func _load_level(index: int) -> void:
 	if index >= levels.size():
 		_show_win_screen()
@@ -52,7 +54,8 @@ func _load_level(index: int) -> void:
 	if data == null:
 		push_error("Could not load: " + levels[index])
 		return
-	max_actions = data.action_limit
+	max_actions      = data.action_limit
+	_level_complete  = false
 	block_manager.load_level(data)
 	robot.reset_to(data.player_start)
 	_clear_commands()
@@ -63,6 +66,10 @@ func _load_level(index: int) -> void:
 	if title_label: title_label.text = data.level_name
 	_update_counter()
 
+func _reload_current_level() -> void:
+	_load_level(current_level_index)
+
+# ── Commands ───────────────────────────────────────────────────────────────────
 func _add_cmd(cmd_type: CommandBlock.CommandType) -> void:
 	if command_blocks.size() >= max_actions:
 		_flash_error()
@@ -86,9 +93,11 @@ func _clear_commands() -> void:
 	command_blocks.clear()
 	_update_counter()
 
+# ── Execution ──────────────────────────────────────────────────────────────────
 func _on_run_pressed() -> void:
 	if is_executing or command_blocks.is_empty(): return
 	is_executing          = true
+	_level_complete       = false
 	current_command_index = 0
 	total_actions_taken   = 0
 	run_button.disabled   = true
@@ -96,7 +105,7 @@ func _on_run_pressed() -> void:
 
 func _execute_next() -> void:
 	if current_command_index >= command_blocks.size():
-		_finish_execution()
+		_on_program_finished()
 		return
 	var cmd : CommandBlock = command_blocks[current_command_index]
 	_highlight(cmd)
@@ -110,12 +119,22 @@ func _on_action_completed() -> void:
 	await get_tree().create_timer(0.15).timeout
 	_execute_next()
 
-func _finish_execution() -> void:
-	is_executing        = false
-	run_button.disabled = false
+## Called when all commands have been executed.
+func _on_program_finished() -> void:
+	is_executing = false
 	_clear_highlights()
 
+	if _level_complete:
+		# Portal was reached — already handled by _on_level_complete
+		return
+
+	# Robot ran out of commands without reaching the exit — reset
+	_show_failure_flash()
+	await get_tree().create_timer(1.0).timeout
+	_reload_current_level()
+
 func _on_level_complete() -> void:
+	_level_complete     = true
 	is_executing        = false
 	run_button.disabled = true
 	_clear_highlights()
@@ -126,6 +145,20 @@ func _on_level_complete() -> void:
 func _show_win_screen() -> void:
 	print("ALL LEVELS COMPLETE!")
 
+# ── Failure flash ──────────────────────────────────────────────────────────────
+func _show_failure_flash() -> void:
+	# Flash the action counter red to signal failure
+	if count_label:
+		count_label.add_theme_color_override("font_color", Color.RED)
+		count_label.text = "RESET!"
+	# Briefly flash each command block red
+	for cmd in command_blocks:
+		cmd.modulate = Color.RED
+	await get_tree().create_timer(0.4).timeout
+	for cmd in command_blocks:
+		cmd.modulate = Color.WHITE
+
+# ── UI helpers ─────────────────────────────────────────────────────────────────
 func _highlight(cmd: CommandBlock) -> void:
 	_clear_highlights()
 	cmd.modulate = Color.YELLOW
