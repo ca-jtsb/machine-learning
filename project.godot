@@ -8,20 +8,27 @@
 
 config_version=5
 
-[animation]
-
-compatibility/default_parent_skeleton_in_mesh_instance_3d=true
-
 [application]
 
-config/name="ML"
-run/main_scene="uid://o1yc5kru4uwu"
-config/features=PackedStringArray("4.6", "GL Compatibility")
+config/name="IESERGA"
+run/main_scene="uid://d0fsid0bhbstv"
+config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 
 [dotnet]
 
-project/assembly_name="ML"
+project/assembly_name="IESERGA"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/ai_assistant_hub/plugin.cfg")
+
+[plugins]
+
+ai_assistant_hub/llm_api="ollama_api"
+ai_assistant_hub/preferences/thinking_target=0
+ai_assistant_hub/preferences/skip_greeting=false
+ai_assistant_hub/preferences/always_scroll_to_bottom=false
 
 [rendering]
 

@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="LevelData" load_steps=2 format=3 uid="uid://cys7nnm23mh6y"]
+
+[ext_resource type="Script" uid="uid://bc6ek2uapd8p2" path="res://scripts/level_data.gd" id="1_lvldata"]
+
+[resource]
+script = ExtResource("1_lvldata")
+level_name = "Level 1 - Tutorial"
+wall_cells = Array[Vector2i]([Vector2i(2, 0), Vector2i(2, 1), Vector2i(2, 2), Vector2i(5, 3), Vector2i(5, 4), Vector2i(5, 5), Vector2i(7, 0), Vector2i(7, 1)])
+portal_cell = Vector2i(8, 5)
+metadata/_custom_type_script = "uid://bc6ek2uapd8p2"
