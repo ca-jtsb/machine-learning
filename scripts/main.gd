@@ -19,6 +19,8 @@ extends Node2D
 	"res://levels/level_1.tres",
 	"res://levels/level_2.tres",
 	"res://levels/level_3.tres",
+	"res://levels/level_4.tres",
+	"res://levels/level_5.tres"
 ]
 
 var current_level_index   : int  = 0
