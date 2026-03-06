@@ -1,0 +1,12 @@
+level_name    = "Level 4 - My Custom Level"
+action_limit  = 6
+player_start  = Vector2i(col, row)   ← where robot spawns
+portal_cell   = Vector2i(col, row)   ← where the exit is
+
+wall_cells    = [Vector2i(1,0), Vector2i(2,0), ...]
+collapsible_cells = [Vector2i(4,3)]
+collapsible_hp    = [2]               ← must match length of collapsible_cells
+even_cells    = [Vector2i(3,2)]
+odd_cells     = [Vector2i(5,1)]
+button_cells  = [Vector2i(7,4)]
+lock_cells    = [Vector2i(6,4)]       ← button[i] unlocks lock[i]

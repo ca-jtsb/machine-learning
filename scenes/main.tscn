@@ -1,9 +1,10 @@
-[gd_scene load_steps=11 format=4 uid="uid://d0fsid0bhbstv"]
+[gd_scene load_steps=10 format=3 uid="uid://d0fsid0bhbstv"]
 
 [ext_resource type="PackedScene" uid="uid://dkxh5kasp4od8" path="res://scenes/robot.tscn" id="1_0wfyh"]
 [ext_resource type="Texture2D" uid="uid://bt5yq4y5f5rh4" path="res://assets/tiles/temp tile map.png" id="1_o5qli"]
 [ext_resource type="Script" uid="uid://1jfagc3gnff7" path="res://scripts/main.gd" id="1_sugp2"]
 [ext_resource type="Script" uid="uid://co46v7e045yav" path="res://scripts/grid_drawer.gd" id="4_jyhfs"]
+[ext_resource type="Script" uid="uid://d4k7l1mypamwp" path="res://scripts/block_manager.gd" id="5_tbgi4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0wfyh"]
 bg_color = Color(0.101960786, 0.101960786, 0.101960786, 1)
@@ -30,57 +31,6 @@ texture_region_size = Vector2i(64, 64)
 [sub_resource type="TileSet" id="TileSet_sugp2"]
 tile_size = Vector2i(64, 64)
 sources/0 = SubResource("TileSetAtlasSource_0wfyh")
-
-[sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_jyhfs"]
-texture = ExtResource("1_o5qli")
-use_texture_padding = false
-0:0/0 = 0
-1:0/0 = 0
-2:0/0 = 0
-3:0/0 = 0
-4:0/0 = 0
-5:0/0 = 0
-6:0/0 = 0
-7:0/0 = 0
-0:1/0 = 0
-1:1/0 = 0
-2:1/0 = 0
-3:1/0 = 0
-4:1/0 = 0
-5:1/0 = 0
-6:1/0 = 0
-7:1/0 = 0
-0:2/0 = 0
-1:2/0 = 0
-2:2/0 = 0
-3:2/0 = 0
-4:2/0 = 0
-5:2/0 = 0
-6:2/0 = 0
-7:2/0 = 0
-0:3/0 = 0
-1:3/0 = 0
-2:3/0 = 0
-3:3/0 = 0
-4:3/0 = 0
-5:3/0 = 0
-6:3/0 = 0
-7:3/0 = 0
-1:4/0 = 0
-2:4/0 = 0
-0:5/0 = 0
-1:5/0 = 0
-2:5/0 = 0
-3:5/0 = 0
-0:6/0 = 0
-1:6/0 = 0
-2:6/0 = 0
-3:6/0 = 0
-1:7/0 = 0
-2:7/0 = 0
-
-[sub_resource type="TileSet" id="TileSet_tbgi4"]
-sources/0 = SubResource("TileSetAtlasSource_jyhfs")
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_sugp2")
@@ -109,15 +59,18 @@ text = "Move Left ←"
 layout_mode = 2
 text = "Move Right →"
 
+[node name="AttackButton" type="Button" parent="UI/CommandPalette"]
+layout_mode = 2
+text = "ATTACK"
+
 [node name="WorkspacePanel" type="PanelContainer" parent="UI"]
-anchors_preset = 12
-anchor_top = 1.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -204.0
-offset_bottom = -4.0
+offset_top = 520.0
+offset_bottom = 2.0
 grow_horizontal = 2
-grow_vertical = 0
+grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_0wfyh")
 
 [node name="Workspace" type="HBoxContainer" parent="UI/WorkspacePanel"]
@@ -160,13 +113,13 @@ text = "0 / 8"
 horizontal_alignment = 1
 
 [node name="GameWorld" type="Node2D" parent="."]
+position = Vector2(210, 10)
 
 [node name="Robot" parent="GameWorld" instance=ExtResource("1_0wfyh")]
 
 [node name="GridMap" type="TileMapLayer" parent="GameWorld"]
-tile_map_data = PackedByteArray("AAADAAcAAAAAAAAAAAADAAYAAAAAAAAAAAADAAUAAAAAAAAAAAADAAQAAAAAAAAAAAADAAMAAAAAAAAAAAAEAAMAAAAAAAAAAAAEAAQAAAAAAAAAAAAEAAUAAAAAAAAAAAAEAAcAAAAAAAAAAAAEAAYAAAAAAAAAAAAFAAIAAAAAAAEAAAAEAAEAAAAAAAAAAAAFAAAAAAAAAAAAAAAFAAEAAAAAAAAAAAAEAAAAAAAAAAAAAAAMAAcAAAABAAAAAAA=")
 tile_set = SubResource("TileSet_sugp2")
 script = ExtResource("4_jyhfs")
 
-[node name="TileMapLayer" type="TileMapLayer" parent="GameWorld"]
-tile_set = SubResource("TileSet_tbgi4")
+[node name="BlockManager" type="Node2D" parent="GameWorld"]
+script = ExtResource("5_tbgi4")
