@@ -33,7 +33,6 @@ func _build_visuals() -> void:
 	_body_rect.position = Vector2(6, 6)
 	_body_rect.color    = Color(0.9, 0.15, 0.15)
 	add_child(_body_rect)
-
 	_dir_indicator          = ColorRect.new()
 	_dir_indicator.size     = Vector2(14, 14)
 	_dir_indicator.color    = Color(1, 1, 1, 0.9)
@@ -57,22 +56,26 @@ func _physics_process(delta: float) -> void:
 			position  = target_position
 			is_moving = false
 
-func move_up()    -> void: await _slide(Direction.UP)
-func move_down()  -> void: await _slide(Direction.DOWN)
-func move_left()  -> void: await _slide(Direction.LEFT)
-func move_right() -> void: await _slide(Direction.RIGHT)
+# ── Public API — these emit action_completed (used by basic commands) ──────────
+func move_up()    -> void: await _slide(Direction.UP);    action_completed.emit()
+func move_down()  -> void: await _slide(Direction.DOWN);  action_completed.emit()
+func move_left()  -> void: await _slide(Direction.LEFT);  action_completed.emit()
+func move_right() -> void: await _slide(Direction.RIGHT); action_completed.emit()
+func attack()     -> void: await _do_attack();            action_completed.emit()
 
-func attack() -> void:
-	if block_manager:
-		var front : Vector2i = grid_position + _dir_to_offset(facing_dir)
-		await block_manager.on_robot_attack(front)
-	action_completed.emit()
+# ── Silent versions — used inside LOOP/APPEND, no signal emitted ───────────────
+func move_up_silent()    -> void: await _slide(Direction.UP)
+func move_down_silent()  -> void: await _slide(Direction.DOWN)
+func move_left_silent()  -> void: await _slide(Direction.LEFT)
+func move_right_silent() -> void: await _slide(Direction.RIGHT)
+func attack_silent()     -> void: await _do_attack()
 
 func reset_to(cell: Vector2i) -> void:
 	grid_position   = cell
 	position        = grid_to_world(cell)
 	target_position = position
 
+# ── Core movement (no signal) ──────────────────────────────────────────────────
 func _slide(dir: Direction) -> void:
 	if is_moving:
 		return
@@ -91,10 +94,14 @@ func _slide(dir: Direction) -> void:
 		if block_manager:
 			var done : bool = block_manager.on_robot_enter(grid_position)
 			if done:
+				# Portal reached mid-compound — still need to surface this
 				action_completed.emit()
 				return
 
-	action_completed.emit()
+func _do_attack() -> void:
+	if block_manager:
+		var front : Vector2i = grid_position + _dir_to_offset(facing_dir)
+		await block_manager.on_robot_attack(front)
 
 func _wait_for_arrival() -> void:
 	while is_moving:
