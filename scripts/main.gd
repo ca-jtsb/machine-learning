@@ -12,8 +12,8 @@ extends Node2D
 @onready var btn_left   : Button = $UI/CommandPalette/LeftButton
 @onready var btn_right  : Button = $UI/CommandPalette/RightButton
 @onready var btn_attack : Button = $UI/CommandPalette/AttackButton
-@onready var btn_loop   : Button = $UI/CommandPalette/LoopButton    # add in editor
-@onready var btn_append : Button = $UI/CommandPalette/AppendButton  # add in editor
+@onready var btn_loop   : Button = $UI/CommandPalette/LoopButton
+@onready var btn_append : Button = $UI/CommandPalette/AppendButton
 
 @export var levels : Array[String] = [
 	"res://levels/level_1.tres",
@@ -38,14 +38,12 @@ func _ready() -> void:
 	var spr = robot.get_node_or_null("Sprite2D")
 	if spr: spr.queue_free()
 
-	# Basic commands
 	btn_up.pressed.connect(func():     _on_basic_pressed(CommandBlock.CommandType.MOVE_UP))
 	btn_down.pressed.connect(func():   _on_basic_pressed(CommandBlock.CommandType.MOVE_DOWN))
 	btn_left.pressed.connect(func():   _on_basic_pressed(CommandBlock.CommandType.MOVE_LEFT))
 	btn_right.pressed.connect(func():  _on_basic_pressed(CommandBlock.CommandType.MOVE_RIGHT))
 	btn_attack.pressed.connect(func(): _on_basic_pressed(CommandBlock.CommandType.ATTACK))
 
-	# Modifier buttons
 	btn_loop.pressed.connect(_on_loop_pressed)
 	btn_append.pressed.connect(_on_append_pressed)
 
@@ -58,29 +56,24 @@ func _ready() -> void:
 
 # ── Modifier button handlers ───────────────────────────────────────────────────
 
-## LOOP button pressed — wait for the user to pick an action next
 func _on_loop_pressed() -> void:
 	if is_executing: return
 	_pending_mode = PendingMode.LOOP
 	_set_palette_hint("Pick action to loop ×3…")
 
-## APPEND (&&) button pressed — wait for first action
 func _on_append_pressed() -> void:
 	if is_executing: return
 	_pending_mode = PendingMode.APPEND_FIRST
 	_set_palette_hint("Pick FIRST action…")
 
-## Any basic command button pressed — routes through pending state machine
 func _on_basic_pressed(cmd_type: CommandBlock.CommandType) -> void:
 	if is_executing: return
 
 	match _pending_mode:
 		PendingMode.NONE:
-			# Normal add
 			_add_basic_cmd(cmd_type)
 
 		PendingMode.LOOP:
-			# Create a LOOP block with this action
 			var block := CommandBlock.new(CommandBlock.CommandType.LOOP)
 			block.loop_action = cmd_type
 			_finalise_block(block)
@@ -88,13 +81,11 @@ func _on_basic_pressed(cmd_type: CommandBlock.CommandType) -> void:
 			_clear_palette_hint()
 
 		PendingMode.APPEND_FIRST:
-			# Store first action, wait for second
 			_pending_first_action = cmd_type
 			_pending_mode         = PendingMode.APPEND_SECOND
 			_set_palette_hint("Pick SECOND action…")
 
 		PendingMode.APPEND_SECOND:
-			# Create an APPEND block with both actions
 			var block := CommandBlock.new(CommandBlock.CommandType.APPEND)
 			block.first_action  = _pending_first_action
 			block.second_action = cmd_type
@@ -102,7 +93,6 @@ func _on_basic_pressed(cmd_type: CommandBlock.CommandType) -> void:
 			_pending_mode = PendingMode.NONE
 			_clear_palette_hint()
 
-## Finalise any CommandBlock and add it to the workspace
 func _finalise_block(block: CommandBlock) -> void:
 	if command_blocks.size() >= max_actions:
 		block.queue_free()
@@ -119,11 +109,10 @@ func _add_basic_cmd(cmd_type: CommandBlock.CommandType) -> void:
 	var block := CommandBlock.new(cmd_type)
 	_finalise_block(block)
 
-# ── Palette hint label (optional — shown if you have a HintLabel node) ─────────
+# ── Palette hint label ─────────────────────────────────────────────────────────
 func _set_palette_hint(msg: String) -> void:
 	var lbl = get_node_or_null("UI/CommandPalette/HintLabel")
 	if lbl: lbl.text = msg
-	# Also highlight the modifier buttons so the player knows a mode is active
 	btn_loop.modulate   = Color.YELLOW if _pending_mode == PendingMode.LOOP else Color.WHITE
 	btn_append.modulate = Color.CYAN   if _pending_mode in [PendingMode.APPEND_FIRST, PendingMode.APPEND_SECOND] else Color.WHITE
 
@@ -174,7 +163,6 @@ func _clear_commands() -> void:
 # ── Execution ──────────────────────────────────────────────────────────────────
 func _on_run_pressed() -> void:
 	if is_executing or command_blocks.is_empty(): return
-	# Cancel any pending modifier
 	_pending_mode = PendingMode.NONE
 	_clear_palette_hint()
 	is_executing          = true
@@ -190,13 +178,15 @@ func _execute_next() -> void:
 		return
 	var cmd : CommandBlock = command_blocks[current_command_index]
 	_highlight(cmd)
+	# FIX: increment BEFORE executing so is_blocked sees the updated count
+	total_actions_taken += 1
+	block_manager.on_action_taken(total_actions_taken)
 	cmd.execute(robot)
 	current_command_index += 1
 
 func _on_action_completed() -> void:
 	if not is_executing: return
-	total_actions_taken += 1
-	block_manager.on_action_taken(total_actions_taken)
+	# FIX: removed increment from here — it now happens in _execute_next
 	await get_tree().create_timer(0.15).timeout
 	_execute_next()
 
@@ -205,7 +195,6 @@ func _on_program_finished() -> void:
 	_clear_highlights()
 	if _level_complete:
 		return
-	# Failed — didn't reach exit
 	_show_failure_flash()
 	await get_tree().create_timer(1.0).timeout
 	_reload_current_level()
