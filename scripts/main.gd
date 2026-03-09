@@ -1,5 +1,7 @@
 extends Node2D
 
+const TutorialOverlay = preload("res://scenes/tutorial_overlay.tscn")
+
 @onready var robot         : Robot         = $GameWorld/Robot
 @onready var block_manager : BlockManager  = $GameWorld/BlockManager
 @onready var workspace     : HBoxContainer = $UI/WorkspacePanel/Workspace
@@ -31,10 +33,17 @@ var total_actions_taken   : int  = 0
 var max_actions           : int  = 8
 var _level_complete       : bool = false
 
+# Tracks which levels have already shown their tutorial — retries won't re-trigger
+var _tutorial_seen : Array[bool] = [false, false, false]
+
 # ── Pending modifier state ─────────────────────────────────────────────────────
 enum PendingMode { NONE, LOOP, APPEND_FIRST, APPEND_SECOND }
-var _pending_mode        : PendingMode = PendingMode.NONE
+var _pending_mode         : PendingMode = PendingMode.NONE
 var _pending_first_action : CommandBlock.CommandType = CommandBlock.CommandType.MOVE_UP
+
+# ── Help panel references (built in code, no scene edits needed) ───────────────
+var _help_panel  : PanelContainer = null
+var _help_button : Button         = null
 
 func _ready() -> void:
 	var spr = robot.get_node_or_null("Sprite2D")
@@ -54,7 +63,117 @@ func _ready() -> void:
 	block_manager.level_complete.connect(_on_level_complete)
 	robot.block_manager = block_manager
 
+	_build_help_ui()
 	_load_level(current_level_index)
+
+# ── Help UI (built entirely in code — no scene changes needed) ─────────────────
+func _build_help_ui() -> void:
+	var ui_layer = $UI
+
+	# Small "?" button pinned to the vertical centre of the right edge
+	_help_button = Button.new()
+	_help_button.text = "?"
+	_help_button.custom_minimum_size = Vector2(36, 36)
+	_help_button.anchor_left   = 1.0
+	_help_button.anchor_right  = 1.0
+	_help_button.anchor_top    = 0.5
+	_help_button.anchor_bottom = 0.5
+	_help_button.offset_left   = -50.0
+	_help_button.offset_right  = -14.0
+	_help_button.offset_top    = -18.0
+	_help_button.offset_bottom =  18.0
+	_help_button.add_theme_font_size_override("font_size", 20)
+	ui_layer.add_child(_help_button)
+	_help_button.pressed.connect(_on_help_pressed)
+
+	# Pop-up panel that appears to the left of the "?" button
+	_help_panel = PanelContainer.new()
+	_help_panel.anchor_left   = 1.0
+	_help_panel.anchor_right  = 1.0
+	_help_panel.anchor_top    = 0.5
+	_help_panel.anchor_bottom = 0.5
+	_help_panel.offset_left   = -310.0
+	_help_panel.offset_right  =  -52.0
+	_help_panel.offset_top    = -160.0
+	_help_panel.offset_bottom =  160.0
+
+	var style := StyleBoxFlat.new()
+	style.bg_color                   = Color(0.10, 0.10, 0.16, 0.97)
+	style.border_width_left          = 2
+	style.border_width_right         = 2
+	style.border_width_top           = 2
+	style.border_width_bottom        = 2
+	style.border_color               = Color(0.40, 0.40, 0.70, 1.0)
+	style.corner_radius_top_left     = 6
+	style.corner_radius_top_right    = 6
+	style.corner_radius_bottom_left  = 6
+	style.corner_radius_bottom_right = 6
+	_help_panel.add_theme_stylebox_override("panel", style)
+
+	var margin := MarginContainer.new()
+	margin.add_theme_constant_override("margin_left",   12)
+	margin.add_theme_constant_override("margin_right",  12)
+	margin.add_theme_constant_override("margin_top",    10)
+	margin.add_theme_constant_override("margin_bottom", 10)
+	_help_panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 6)
+	margin.add_child(vbox)
+
+	# Panel title
+	var title := Label.new()
+	title.text = "Move List"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(0.7, 0.8, 1.0, 1.0))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	vbox.add_child(HSeparator.new())
+
+	# One entry per command
+	var entries : Array = [
+		["↑  ↓  ←  →",  "Move the robot. It slides\nuntil it hits a wall."],
+		["⚔  ATTACK",    "Break the block in front\nof the robot (−1 HP)."],
+		["↺  LOOP ×3",   "Choose any action — it\nrepeats 3 times, uses 1 slot."],
+		["&&  APPEND",   "Chain two actions into\n1 slot. Both run in order."],
+	]
+
+	for entry in entries:
+		var row := VBoxContainer.new()
+		row.add_theme_constant_override("separation", 2)
+		vbox.add_child(row)
+
+		var cmd_lbl := Label.new()
+		cmd_lbl.text = entry[0]
+		cmd_lbl.add_theme_font_size_override("font_size", 14)
+		cmd_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3, 1.0))
+		row.add_child(cmd_lbl)
+
+		var desc_lbl := Label.new()
+		desc_lbl.text = entry[1]
+		desc_lbl.add_theme_font_size_override("font_size", 12)
+		desc_lbl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1.0))
+		desc_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.add_child(desc_lbl)
+
+		# Small spacer between entries
+		var spacer := Control.new()
+		spacer.custom_minimum_size = Vector2(0, 4)
+		vbox.add_child(spacer)
+
+	# Close button
+	var close_btn := Button.new()
+	close_btn.text = "Close"
+	close_btn.add_theme_font_size_override("font_size", 13)
+	close_btn.pressed.connect(func(): _help_panel.visible = false)
+	vbox.add_child(close_btn)
+
+	_help_panel.visible = false
+	ui_layer.add_child(_help_panel)
+
+func _on_help_pressed() -> void:
+	_help_panel.visible = not _help_panel.visible
 
 # ── Modifier button handlers ───────────────────────────────────────────────────
 
@@ -147,8 +266,72 @@ func _load_level(index: int) -> void:
 	_update_counter()
 	_clear_palette_hint()
 
+	# Only show tutorial the FIRST time a level loads — retries skip it
+	if index < _tutorial_seen.size() and not _tutorial_seen[index]:
+		_tutorial_seen[index] = true
+		_show_tutorial(index)
+
 func _reload_current_level() -> void:
+	# _tutorial_seen[current_level_index] is already true, so tutorial won't fire
 	_load_level(current_level_index)
+
+# ── Tutorial ───────────────────────────────────────────────────────────────────
+func _show_tutorial(level_index: int) -> void:
+	var overlay = TutorialOverlay.instantiate()
+	$UI.add_child(overlay)
+	overlay.setup(_get_tutorial_steps(level_index))
+	overlay.tutorial_finished.connect(func():
+		run_button.disabled = false)
+	run_button.disabled = true
+
+func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
+	match level_index:
+		0: # Level 1 — basic movement
+			return [
+				{
+					"text": "[b]Welcome![/b]\n\nYOUR TEXT HERE — introduce the game concept.",
+					"pointer_pos": null
+				},
+				{
+					"text": "YOUR TEXT HERE — explain the movement buttons.\n\nClick them to add commands to your program.",
+					"pointer_pos": Vector2(97, 200)
+				},
+				{
+					"text": "YOUR TEXT HERE — explain the workspace at the bottom.\n\nCommands you add appear here.",
+					"pointer_pos": Vector2(500, 530)
+				},
+				{
+					"text": "YOUR TEXT HERE — explain the Run button.",
+					"pointer_pos": Vector2(940, 610)
+				},
+				{
+					"text": "YOUR TEXT HERE — explain the goal: reach the EXIT tile.",
+					"pointer_pos": Vector2(850, 300)
+				},
+			]
+		1: # Level 2 — collapsible blocks
+			return [
+				{
+					"text": "YOUR TEXT HERE — introduce the white cracked blocks.",
+					"pointer_pos": Vector2(580, 390)
+				},
+				{
+					"text": "YOUR TEXT HERE — explain the ATTACK command.",
+					"pointer_pos": Vector2(97, 290)
+				},
+			]
+		2: # Level 3 — even/odd blocks
+			return [
+				{
+					"text": "YOUR TEXT HERE — explain Even blocks.",
+					"pointer_pos": Vector2(850, 197)
+				},
+				{
+					"text": "YOUR TEXT HERE — explain Odd blocks.",
+					"pointer_pos": Vector2(850, 420)
+				},
+			]
+	return []
 
 # ── Commands ───────────────────────────────────────────────────────────────────
 func _remove_cmd(block: CommandBlock) -> void:
@@ -180,7 +363,6 @@ func _execute_next() -> void:
 		return
 	var cmd : CommandBlock = command_blocks[current_command_index]
 	_highlight(cmd)
-	# FIX: increment BEFORE executing so is_blocked sees the updated count
 	total_actions_taken += 1
 	block_manager.on_action_taken(total_actions_taken)
 	cmd.execute(robot)
@@ -188,7 +370,6 @@ func _execute_next() -> void:
 
 func _on_action_completed() -> void:
 	if not is_executing: return
-	# FIX: removed increment from here — it now happens in _execute_next
 	await get_tree().create_timer(0.15).timeout
 	_execute_next()
 
