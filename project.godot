@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="IESERGA"
-run/main_scene="uid://d0fsid0bhbstv"
+run/main_scene="uid://0x11wn7og3yw"
 config/features=PackedStringArray("4.5", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -21,7 +21,7 @@ project/assembly_name="IESERGA"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/ai_assistant_hub/plugin.cfg")
+enabled=PackedStringArray()
 
 [plugins]
 
