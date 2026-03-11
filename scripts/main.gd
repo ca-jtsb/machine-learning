@@ -18,11 +18,7 @@ const TutorialOverlay = preload("res://scenes/tutorial_overlay.tscn")
 @onready var btn_append : Button = $UI/CommandPalette/AppendButton
 
 @export var levels : Array[String] = [
-	"res://levels/level_1.tres",
-	"res://levels/level_2.tres",
-	"res://levels/level_3.tres",
-	"res://levels/level_4.tres",
-	"res://levels/level_5.tres"
+	"res://levels/level_8.tres"
 ]
 
 var current_level_index   : int  = 0
