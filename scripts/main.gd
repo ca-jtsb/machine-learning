@@ -1,6 +1,7 @@
 extends Node2D
 
 const TutorialOverlay = preload("res://scenes/tutorial_overlay.tscn")
+const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 @onready var robot         : Robot         = $GameWorld/Robot
 @onready var block_manager : BlockManager  = $GameWorld/BlockManager
@@ -21,6 +22,7 @@ const TutorialOverlay = preload("res://scenes/tutorial_overlay.tscn")
 @export var levels : Array[String] = [
 	"res://levels/level_1.tres",
 	"res://levels/level_2.tres",
+	"res://levels/level_3.tres",
 ]
 
 var current_level_index   : int  = 0
@@ -416,9 +418,16 @@ func _on_level_complete() -> void:
 	is_executing        = false
 	run_button.disabled = true
 	_clear_highlights()
-	await get_tree().create_timer(1.0).timeout
-	current_level_index += 1
-	_load_level(current_level_index)
+	_show_level_complete_popup()
+	
+func _show_level_complete_popup() -> void:
+	var popup = LevelCompleteScreen.instantiate()
+	$UI.add_child(popup)
+	popup.next_level_pressed.connect(func():
+		popup.queue_free()
+		current_level_index += 1
+		_load_level(current_level_index)
+	)
 
 func _show_win_screen() -> void:
 	print("ALL LEVELS COMPLETE!")
