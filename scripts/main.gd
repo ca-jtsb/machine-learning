@@ -19,7 +19,8 @@ const TutorialOverlay = preload("res://scenes/tutorial_overlay.tscn")
 @onready var btn_append : Button = $UI/CommandPalette/AppendButton
 
 @export var levels : Array[String] = [
-	"res://levels/level_1.tres"
+	"res://levels/level_1.tres",
+	"res://levels/level_2.tres",
 ]
 
 var current_level_index   : int  = 0
@@ -177,11 +178,19 @@ func _on_help_pressed() -> void:
 
 func _on_loop_pressed() -> void:
 	if is_executing: return
+	if _pending_mode == PendingMode.LOOP:
+		_pending_mode = PendingMode.NONE
+		_clear_palette_hint()
+		return
 	_pending_mode = PendingMode.LOOP
 	_set_palette_hint("Pick action to loop ×3…")
 
 func _on_append_pressed() -> void:
 	if is_executing: return
+	if _pending_mode == PendingMode.APPEND_FIRST or _pending_mode == PendingMode.APPEND_SECOND:
+		_pending_mode = PendingMode.NONE
+		_clear_palette_hint()
+		return
 	_pending_mode = PendingMode.APPEND_FIRST
 	_set_palette_hint("Pick FIRST action…")
 
@@ -254,6 +263,7 @@ func _load_level(index: int) -> void:
 	_level_complete = false
 	block_manager.load_level(data)
 	robot.reset_to(data.player_start)
+	_refresh_palette(data.available_commands)
 	_clear_commands()
 	_pending_mode         = PendingMode.NONE
 	total_actions_taken   = 0
@@ -441,3 +451,12 @@ func _flash_error() -> void:
 	count_label.add_theme_color_override("font_color", Color.RED)
 	await get_tree().create_timer(0.3).timeout
 	_update_counter()
+	
+func _refresh_palette(allowed: Array[String]) -> void:
+	btn_up.visible     = allowed.has("up")
+	btn_down.visible   = allowed.has("down")
+	btn_left.visible   = allowed.has("left")
+	btn_right.visible  = allowed.has("right")
+	btn_attack.visible = allowed.has("attack")
+	btn_loop.visible   = allowed.has("loop")
+	btn_append.visible = allowed.has("append")

@@ -40,3 +40,6 @@ class_name LevelData
 # Buttons + Locks — button[i] unlocks lock[i]; arrays must be same length
 @export var button_cells : Array[Vector2i] = []
 @export var lock_cells   : Array[Vector2i] = []
+
+# Which command buttons are available on this level
+@export var available_commands : Array[String] = ["up", "down", "left", "right", "attack", "loop", "append"]
