@@ -4,7 +4,7 @@ class_name Robot
 signal action_completed
 
 const TILE_SIZE  : int   = 80
-const MOVE_SPEED : float = 10.0
+const MOVE_SPEED : float = 6.0
 
 enum Direction { UP, DOWN, LEFT, RIGHT }
 

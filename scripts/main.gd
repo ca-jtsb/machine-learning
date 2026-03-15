@@ -8,6 +8,7 @@ const TutorialOverlay = preload("res://scenes/tutorial_overlay.tscn")
 @onready var run_button    : Button        = $UI/RunButton
 @onready var count_label   : Label         = $UI/ActionCounterPanel/VBoxContainer/CountLabel
 @onready var title_label   : Label         = $UI/ActionCounterPanel/VBoxContainer/TitleLabel
+@onready var btn_backspace : Button 	   = $UI/BackspaceButton
 
 @onready var btn_up     : Button = $UI/CommandPalette/UpButton
 @onready var btn_down   : Button = $UI/CommandPalette/DownButton
@@ -18,7 +19,7 @@ const TutorialOverlay = preload("res://scenes/tutorial_overlay.tscn")
 @onready var btn_append : Button = $UI/CommandPalette/AppendButton
 
 @export var levels : Array[String] = [
-	"res://levels/level_8.tres"
+	"res://levels/level_1.tres"
 ]
 
 var current_level_index   : int  = 0
@@ -55,6 +56,7 @@ func _ready() -> void:
 	btn_append.pressed.connect(_on_append_pressed)
 
 	run_button.pressed.connect(_on_run_pressed)
+	btn_backspace.pressed.connect(_remove_last_cmd)
 	robot.action_completed.connect(_on_action_completed)
 	block_manager.level_complete.connect(_on_level_complete)
 	robot.block_manager = block_manager
@@ -352,6 +354,11 @@ func _on_run_pressed() -> void:
 	total_actions_taken   = 0
 	run_button.disabled   = true
 	_execute_next()
+	
+func _remove_last_cmd() -> void:
+	if command_blocks.is_empty(): return
+	var last_block : CommandBlock = command_blocks.back()
+	_remove_cmd(last_block)
 
 func _execute_next() -> void:
 	if current_command_index >= command_blocks.size():
@@ -370,13 +377,29 @@ func _on_action_completed() -> void:
 	_execute_next()
 
 func _on_program_finished() -> void:
+	#is_executing = false
+	#_clear_highlights()
+	#if _level_complete:
+		#return
+	#_show_failure_flash()
+	#await get_tree().create_timer(1.0).timeout
+	#_reload_current_level()
 	is_executing = false
 	_clear_highlights()
 	if _level_complete:
 		return
 	_show_failure_flash()
 	await get_tree().create_timer(1.0).timeout
-	_reload_current_level()
+	# Reset robot and state WITHOUT clearing commands
+	var data : LevelData = load(levels[current_level_index]) as LevelData
+	block_manager.load_level(data)
+	robot.reset_to(data.player_start)
+	_pending_mode         = PendingMode.NONE
+	total_actions_taken   = 0
+	current_command_index = 0
+	run_button.disabled   = false
+	_update_counter()
+	_clear_palette_hint()
 
 func _on_level_complete() -> void:
 	_level_complete     = true
