@@ -6,14 +6,14 @@
 [ext_resource type="Script" uid="uid://co46v7e045yav" path="res://scripts/grid_drawer.gd" id="4_jyhfs"]
 [ext_resource type="Script" uid="uid://d4k7l1mypamwp" path="res://scripts/block_manager.gd" id="5_tbgi4"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0wfyh"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_workspace"]
 bg_color = Color(0.101960786, 0.101960786, 0.101960786, 1)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jyhfs"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_counter"]
 bg_color = Color(0.16470589, 0.16470589, 0.2901961, 1)
 border_width_left = 2
 border_width_top = 2
@@ -40,7 +40,7 @@ script = ExtResource("1_sugp2")
 [node name="CommandPalette" type="VBoxContainer" parent="UI"]
 anchors_preset = 9
 anchor_bottom = 1.0
-offset_right = 194.0
+offset_right = 160.0
 grow_vertical = 2
 
 [node name="UpButton" type="Button" parent="UI/CommandPalette"]
@@ -71,31 +71,22 @@ text = "↺ LOOP"
 layout_mode = 2
 text = "&& APPEND"
 
+[node name="HintLabel" type="Label" parent="UI/CommandPalette"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+
 [node name="WorkspacePanel" type="PanelContainer" parent="UI"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 520.0
-offset_bottom = 2.0
+offset_top = 544.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_0wfyh")
+theme_override_styles/panel = SubResource("StyleBoxFlat_workspace")
 
 [node name="Workspace" type="HBoxContainer" parent="UI/WorkspacePanel"]
 layout_mode = 2
 theme_override_constants/separation = 8
-
-[node name="RunButton" type="Button" parent="UI"]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -160.0
-offset_top = -50.0
-grow_horizontal = 0
-grow_vertical = 0
-text = "▶ RUN PROGRAM"
 
 [node name="BackspaceButton" type="Button" parent="UI"]
 anchors_preset = 3
@@ -103,13 +94,27 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -162.0
-offset_top = -85.0
-offset_right = -2.0
-offset_bottom = -35.0
+offset_left = -170.0
+offset_top = -96.0
+offset_right = -6.0
+offset_bottom = -54.0
 grow_horizontal = 0
 grow_vertical = 0
-text = "⌫ BACKSPACE    "
+text = "⌫ BACKSPACE"
+
+[node name="RunButton" type="Button" parent="UI"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -170.0
+offset_top = -50.0
+offset_right = -6.0
+offset_bottom = -6.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "▶ RUN PROGRAM"
 
 [node name="ActionCounterPanel" type="PanelContainer" parent="UI"]
 anchors_preset = 1
@@ -118,7 +123,7 @@ anchor_right = 1.0
 offset_left = -180.0
 offset_bottom = 60.0
 grow_horizontal = 0
-theme_override_styles/panel = SubResource("StyleBoxFlat_jyhfs")
+theme_override_styles/panel = SubResource("StyleBoxFlat_counter")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UI/ActionCounterPanel"]
 layout_mode = 2
@@ -135,7 +140,7 @@ text = "0 / 8"
 horizontal_alignment = 1
 
 [node name="GameWorld" type="Node2D" parent="."]
-position = Vector2(210, 10)
+position = Vector2(168, 8)
 
 [node name="Robot" parent="GameWorld" instance=ExtResource("1_0wfyh")]
 

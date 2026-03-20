@@ -1,14 +1,14 @@
-[gd_scene format=3 uid="uid://dkxh5kasp4od8"]
+[gd_scene load_steps=3 format=3 uid="uid://dkxh5kasp4od8"]
 
 [ext_resource type="Script" uid="uid://h3ehcssbxfkd" path="res://scripts/robot.gd" id="1_br0rw"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_ykvnc"]
 size = Vector2(32, 32)
 
-[node name="Robot" type="CharacterBody2D" unique_id=596611381]
+[node name="Robot" type="CharacterBody2D"]
 script = ExtResource("1_br0rw")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=994413521]
+[node name="Sprite2D" type="Sprite2D" parent="."]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1709511481]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("RectangleShape2D_ykvnc")

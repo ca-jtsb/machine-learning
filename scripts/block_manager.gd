@@ -1,7 +1,7 @@
 extends Node2D
 class_name BlockManager
 
-const TILE_SIZE : int = 80
+const TILE_SIZE : int = 88
 
 signal level_complete
 
