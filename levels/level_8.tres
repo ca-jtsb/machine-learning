@@ -11,4 +11,5 @@ wall_cells = Array[Vector2i]([Vector2i(1, 0), Vector2i(2, 0), Vector2i(5, 0), Ve
 portal_cell = Vector2i(8, 2)
 collapsible_cells = Array[Vector2i]([Vector2i(1, 2), Vector2i(2, 2), Vector2i(3, 2), Vector2i(4, 2), Vector2i(5, 2), Vector2i(6, 2), Vector2i(7, 2)])
 collapsible_hp = Array[int]([3, 3, 3, 3, 3, 3, 3])
-metadata/_custom_type_script = "uid://bc6ek2uapd8p2"
+use_if_else_mode = true
+available_commands = []

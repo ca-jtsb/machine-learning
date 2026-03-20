@@ -116,11 +116,13 @@ func _execute_repeat_if_else(robot: Robot) -> void:
 
 func _run_one_step(robot: Robot, t: CommandType) -> void:
 	# Per-cell movement: moves exactly ONE tile (not slide-until-wall)
+	# ATTACK is also valid inside REPEAT-IF-ELSE blocks
 	match t:
 		CommandType.MOVE_UP:    await robot.move_one_up()
 		CommandType.MOVE_DOWN:  await robot.move_one_down()
 		CommandType.MOVE_LEFT:  await robot.move_one_left()
 		CommandType.MOVE_RIGHT: await robot.move_one_right()
+		CommandType.ATTACK:     await robot.attack_silent()
 
 func _dir_string_to_offset(dir: String) -> Vector2i:
 	match dir:

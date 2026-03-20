@@ -22,12 +22,12 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	#"res://levels/level_1.tres",
-	#"res://levels/level_2.tres",
-	#"res://levels/level_3.tres",
-	#"res://levels/level_4.tres",
-	#"res://levels/level_5.tres",
-	#"res://levels/level_6.tres",
+	"res://levels/level_1.tres",
+	"res://levels/level_2.tres",
+	"res://levels/level_3.tres",
+	"res://levels/level_4.tres",
+	"res://levels/level_5.tres",
+	"res://levels/level_6.tres",
 	"res://levels/level_7.tres",
 	"res://levels/level_8.tres",
 ]
@@ -46,24 +46,34 @@ const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
 const BLUEPRINTS : Dictionary = {
 	"Level 7 - The Algorithm": [
 		{
-			"repeat_count":    7,
+			"repeat_count":    6,
 			"check_direction": "?",
 			"check_condition": "?",
 			"then_action":     "?",
 			"else_action":     "?"
 		},
 		{
-			"repeat_count":    13,
+			"repeat_count":    12,
 			"check_direction": "?",
 			"check_condition": "?",
 			"then_action":     "?",
 			"else_action":     "?"
 		}
 	],
-	# Add more IF-ELSE level blueprints here as you create them:
-	# "Level 8 - Another IF Level": [
-	#     { "repeat_count": 8, "check_direction": "RIGHT", "check_condition": "?", "then_action": "?", "else_action": "?" }
-	# ],
+	# ── Level 8: Break all collapsibles then reach EXIT ───────────────────────
+	# Row 2 has 7 collapsible blocks (HP=3 each) between player and exit.
+	# Strategy: if RIGHT is obstacle → ATTACK, else → MOVE RIGHT.
+	# 7 blocks × 3 HP = 21 attacks + 7 moves = 28 minimum → use 35 for safety.
+	# All slots pre-filled — player just runs it to see IF-ELSE in action.
+	"Level 8": [
+		{
+			"repeat_count":    35,
+			"check_direction": "?",
+			"check_condition": "?",
+			"then_action":     "?",
+			"else_action":     "?"
+		}
+	],
 }
 
 # ── State ──────────────────────────────────────────────────────────────────────
@@ -81,6 +91,7 @@ var _tutorial_seen        : Array[bool] = []
 var _if_else_blocks    : Array           = []   # Array[RepeatIfElseBlock]
 var _if_else_workspace : VBoxContainer  = null
 var _if_else_scroll    : ScrollContainer = null
+var _if_else_panel     : PanelContainer  = null
 
 # ── Pending modifier state ─────────────────────────────────────────────────────
 enum PendingMode { NONE, LOOP, APPEND_FIRST, APPEND_SECOND }
@@ -116,23 +127,61 @@ func _ready() -> void:
 	_build_if_else_workspace()
 	_load_level(current_level_index)
 
-# ── IF-ELSE scrollable workspace (built once, toggled per level) ───────────────
+# ── IF-ELSE right-side panel (built once, toggled per level) ──────────────────
+# Layout: right of the grid, full height, scrollable VBox of REPEAT-IF-ELSE blocks.
+# Grid is at x=210, TILE_SIZE=64, 9 cols = 576px wide → right edge at x=786.
+# This panel occupies x=794 to screen right edge.
+# Layout constants — tile=88, grid=792x528
+# Standard mode:  GameWorld at (168, 8),  workspace below grid
+# IF-ELSE mode:   GameWorld at (16, 8),   right panel beside grid, no bottom workspace
+const GRID_X_STANDARD   : float = 168.0   # palette(160) + gap(8)
+const GRID_X_IF_ELSE    : float = 16.0    # no palette, small left margin
+const GRID_Y            : float = 8.0
+const IFELSE_PANEL_X    : float = 816.0   # 16 + 792 + 8
+const IFELSE_PANEL_RIGHT : float = 1146.0
+const IFELSE_PANEL_TOP   : float = 8.0    # align with grid top
+# Panel bottom matches grid bottom: grid_y(8) + grid_h(528) = 536, so offset from bottom = -(648-536) = -112
+const IFELSE_PANEL_BOTTOM : float = -112.0
+
 func _build_if_else_workspace() -> void:
-	var workspace_panel = $UI/WorkspacePanel
+	var ui_layer = $UI
+
+	# Outer panel container anchored to right side
+	var panel := PanelContainer.new()
+	panel.name          = "IfElsePanel"
+	panel.anchor_left   = 0.0; panel.anchor_right  = 0.0
+	panel.anchor_top    = 0.0; panel.anchor_bottom = 1.0
+	panel.offset_left   = IFELSE_PANEL_X
+	panel.offset_right  = IFELSE_PANEL_RIGHT
+	panel.offset_top    = IFELSE_PANEL_TOP
+	panel.offset_bottom = IFELSE_PANEL_BOTTOM
+	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	var style := StyleBoxFlat.new()
+	style.bg_color     = Color(0.08, 0.08, 0.12, 1.0)
+	style.border_color = Color(0.95, 0.55, 0.05, 1.0)
+	style.border_width_left  = 2; style.border_width_right  = 2
+	style.border_width_top   = 2; style.border_width_bottom = 2
+	panel.add_theme_stylebox_override("panel", style)
+	panel.visible = false
+	ui_layer.add_child(panel)
+
+	var margin := MarginContainer.new()
+	for side in ["left","right","top","bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 8)
+	panel.add_child(margin)
 
 	_if_else_scroll = ScrollContainer.new()
-	_if_else_scroll.name = "IfElseScroll"
 	_if_else_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_if_else_scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
-	_if_else_scroll.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_if_else_scroll.visible = false
+	margin.add_child(_if_else_scroll)
 
 	_if_else_workspace = VBoxContainer.new()
-	_if_else_workspace.add_theme_constant_override("separation", 10)
+	_if_else_workspace.add_theme_constant_override("separation", 12)
 	_if_else_workspace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_if_else_scroll.add_child(_if_else_workspace)
 
-	workspace_panel.add_child(_if_else_scroll)
+	# Store panel reference so we can show/hide it
+	_if_else_panel = panel
 
 # ── Help UI ────────────────────────────────────────────────────────────────────
 func _build_help_ui() -> void:
@@ -252,18 +301,26 @@ func _reload_current_level() -> void:
 func _enter_standard_mode(data: LevelData) -> void:
 	$UI/CommandPalette.visible     = true
 	$UI/BackspaceButton.visible    = true
+	$UI/RunButton.visible          = true
 	$UI/ActionCounterPanel.visible = true
-	workspace.visible = true
-	if _if_else_scroll: _if_else_scroll.visible = false
+	$UI/WorkspacePanel.visible     = true
+	workspace.visible              = true
+	if _if_else_panel: _if_else_panel.visible = false
+	# Move grid to standard position: right of palette
+	$GameWorld.position = Vector2(GRID_X_STANDARD, GRID_Y)
 	_refresh_palette(data.available_commands)
 
 # ── IF-ELSE mode ───────────────────────────────────────────────────────────────
 func _enter_if_else_mode(data: LevelData) -> void:
 	$UI/CommandPalette.visible     = false
-	$UI/BackspaceButton.visible    = false
+	$UI/BackspaceButton.visible    = true
+	$UI/RunButton.visible          = true
 	$UI/ActionCounterPanel.visible = false
-	workspace.visible = false
-	if _if_else_scroll: _if_else_scroll.visible = true
+	$UI/WorkspacePanel.visible     = false
+	workspace.visible              = false
+	if _if_else_panel: _if_else_panel.visible = true
+	# Move grid left — no palette, so grid can start near screen edge
+	$GameWorld.position = Vector2(GRID_X_IF_ELSE, GRID_Y)
 
 	# Clear previous blueprint widgets
 	for child in _if_else_workspace.get_children():
