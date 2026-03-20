@@ -56,26 +56,52 @@ func _physics_process(delta: float) -> void:
 			position  = target_position
 			is_moving = false
 
-# ── Public API — these emit action_completed (used by basic commands) ──────────
+# ── Public API — slide until wall (original mechanic) ─────────────────────────
 func move_up()    -> void: await _slide(Direction.UP);    action_completed.emit()
 func move_down()  -> void: await _slide(Direction.DOWN);  action_completed.emit()
 func move_left()  -> void: await _slide(Direction.LEFT);  action_completed.emit()
 func move_right() -> void: await _slide(Direction.RIGHT); action_completed.emit()
 func attack()     -> void: await _do_attack();            action_completed.emit()
 
-# ── Silent versions — used inside LOOP/APPEND, no signal emitted ───────────────
+# ── Silent slide versions (used inside LOOP/APPEND) ───────────────────────────
 func move_up_silent()    -> void: await _slide(Direction.UP)
 func move_down_silent()  -> void: await _slide(Direction.DOWN)
 func move_left_silent()  -> void: await _slide(Direction.LEFT)
 func move_right_silent() -> void: await _slide(Direction.RIGHT)
 func attack_silent()     -> void: await _do_attack()
 
+# ── Per-cell movement (used inside REPEAT-IF-ELSE blocks) ─────────────────────
+# Moves exactly ONE tile in the given direction. If blocked, stays put.
+# Does not emit action_completed (caller handles the signal).
+func move_one_up()    -> void: await _step_one(Direction.UP)
+func move_one_down()  -> void: await _step_one(Direction.DOWN)
+func move_one_left()  -> void: await _step_one(Direction.LEFT)
+func move_one_right() -> void: await _step_one(Direction.RIGHT)
+
+func _step_one(dir: Direction) -> void:
+	facing_dir = dir
+	_update_dir_indicator()
+	var next : Vector2i = grid_position + _dir_to_offset(dir)
+	if _is_blocked(next):
+		return  # blocked — stay put, no movement animation
+	grid_position   = next
+	target_position = grid_to_world(grid_position)
+	is_moving       = true
+	await _wait_for_arrival()
+	if block_manager:
+		block_manager.on_robot_enter(grid_position)
+
+# ── Sensing — used by REPEAT-IF-ELSE condition check ──────────────────────────
+# Returns true if the given cell is walkable (free), false if blocked.
+func sense_cell(cell: Vector2i) -> bool:
+	return not _is_blocked(cell)
+
 func reset_to(cell: Vector2i) -> void:
 	grid_position   = cell
 	position        = grid_to_world(cell)
 	target_position = position
 
-# ── Core movement (no signal) ──────────────────────────────────────────────────
+# ── Core slide movement (no signal) ───────────────────────────────────────────
 func _slide(dir: Direction) -> void:
 	if is_moving:
 		return
@@ -94,7 +120,6 @@ func _slide(dir: Direction) -> void:
 		if block_manager:
 			var done : bool = block_manager.on_robot_enter(grid_position)
 			if done:
-				# Portal reached mid-compound — still need to surface this
 				action_completed.emit()
 				return
 

@@ -1,45 +1,50 @@
 extends Resource
 class_name LevelData
 
-## One .tres file per level. Fill in the Inspector or in code.
-## ----------------------------------------------------------------
-## HOW TO CREATE A NEW LEVEL:
-##   1. FileSystem → right-click res://levels/ → New Resource
-##   2. Pick "LevelData" from the list → save as level_1.tres etc.
-##   3. Fill the arrays in the Inspector (see field descriptions below)
-## ----------------------------------------------------------------
+# ── Basic level info ───────────────────────────────────────────────────────────
+@export var level_name    : String  = "Level"
+@export var action_limit  : int     = 8
+@export var player_start  : Vector2i = Vector2i(0, 5)
+@export var next_level_scene : String = ""
 
-# Level meta
-@export var level_name   : String  = "Level 1"
-@export var action_limit : int     = 8
+# ── Which commands appear in the palette for this level ────────────────────────
+# Valid strings: "up", "down", "left", "right", "attack", "loop", "append"
+# Leave empty to show all standard commands.
+@export var available_commands : Array[String] = [
+	"up", "down", "left", "right", "attack", "loop", "append"
+]
 
-# Player start cell (col, row)  col 0-8 / row 0-5
-@export var player_start : Vector2i = Vector2i(0, 5)
-
-# Scene to load when the portal is reached. Leave blank for "you win" screen.
-@export var next_level_scene : String = ""   # e.g. "res://scenes/level_2.tscn"
-
-# ── Block cells ───────────────────────────────────────────────────────────────
-# Black walls — impassable, stop all movement
-@export var wall_cells : Array[Vector2i] = []
-
-# Green portal — stepping on it completes the level
-@export var portal_cell : Vector2i = Vector2i(-1, -1)  # -1,-1 = none
-
-# White cracked blocks — need ATTACK commands to break
-# collapsible_cells[i] and collapsible_hp[i] must be the same length
+# ── Grid data ──────────────────────────────────────────────────────────────────
+@export var wall_cells        : Array[Vector2i] = []
+@export var portal_cell       : Vector2i        = Vector2i(-1, -1)
 @export var collapsible_cells : Array[Vector2i] = []
 @export var collapsible_hp    : Array[int]       = []
+@export var even_cells        : Array[Vector2i] = []
+@export var odd_cells         : Array[Vector2i] = []
+@export var button_cells      : Array[Vector2i] = []
+@export var lock_cells        : Array[Vector2i] = []
 
-# White Even blocks — passable when total actions taken is even (0, 2, 4…)
-@export var even_cells : Array[Vector2i] = []
+# ── IF-ELSE mode ───────────────────────────────────────────────────────────────
+# When true:
+#   • The standard command palette is hidden (no basic move buttons)
+#   • The workspace is replaced by the blueprint widget
+#   • action_limit is ignored (no move counter shown)
+#   • Per-cell movement is used (robot moves 1 tile at a time)
+@export var use_if_else_mode  : bool = false
 
-# White Odd blocks — passable when total actions taken is odd (1, 3, 5…)
-@export var odd_cells : Array[Vector2i] = []
+# ── Blueprint definition ───────────────────────────────────────────────────────
+# Array of Dictionaries, one per REPEAT-IF-ELSE block in the template.
+# Each dict has these keys:
+#
+#   "repeat_count"    : int     — number of iterations (always fixed, shown as label)
+#   "check_direction" : Variant — String ("UP"/"DOWN"/"LEFT"/"RIGHT") or null (dropdown)
+#   "check_condition" : Variant — String ("is_free"/"is_obstacle") or null (dropdown)
+#   "then_action"     : Variant — String ("move_up"/"move_down"/etc) or null (dropdown)
+#   "else_action"     : Variant — String ("move_up"/"move_down"/etc) or null (dropdown)
+#
+# "?"   = player must choose via dropdown (blank slot)
+#         Use "?" in .tres files — Godot cannot store null inside Dictionaries.
+# String = pre-filled, displayed as read-only text (e.g. "LEFT", "is_free", "move_up")
 
-# Buttons + Locks — button[i] unlocks lock[i]; arrays must be same length
-@export var button_cells : Array[Vector2i] = []
-@export var lock_cells   : Array[Vector2i] = []
-
-# Which command buttons are available on this level
-@export var available_commands : Array[String] = ["up", "down", "left", "right", "attack", "loop", "append"]
+# Blueprints are defined in main.gd BLUEPRINTS dict, keyed by level_name.
+# Godot cannot serialize nested Dicts in .tres — blueprints live in code.

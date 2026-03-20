@@ -77,14 +77,14 @@ func _add_label(parent: Node, text: String, font_size: int, color: Color, offset
 	return lbl
 
 # Adds a Sprite2D scaled to fit exactly one tile, centered on the tile.
-func _add_sprite(parent: Node2D, tex_path: String, node_name: String = "Tex", visible: bool = true) -> Sprite2D:
+func _add_sprite(parent: Node2D, tex_path: String, node_name: String = "Tex", start_visible: bool = true) -> Sprite2D:
 	var s := Sprite2D.new()
 	s.name     = node_name
 	s.texture  = load(tex_path)
 	s.position = Vector2(TILE_SIZE / 2.0, TILE_SIZE / 2.0)
 	var tex_size : Vector2 = s.texture.get_size()
 	s.scale    = Vector2(TILE_SIZE / tex_size.x, TILE_SIZE / tex_size.y)
-	s.visible  = visible
+	s.visible  = start_visible
 	parent.add_child(s)
 	return s
 
