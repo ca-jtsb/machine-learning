@@ -30,6 +30,8 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 	"res://levels/level_6.tres",
 	"res://levels/level_7.tres",
 	"res://levels/level_8.tres",
+	"res://levels/level_9.tres",
+	"res://levels/level_10.tres",
 ]
 
 # ── IF-ELSE unlock threshold ───────────────────────────────────────────────────
@@ -68,6 +70,70 @@ const BLUEPRINTS : Dictionary = {
 	"Level 8": [
 		{
 			"repeat_count":    35,
+			"check_direction": "RIGHT",
+			"check_condition": "is_obstacle",
+			"then_action":     "attack",
+			"else_action":     "move_right"
+		}
+	],
+
+	# ── Level 9 ─────────────────────────────────────────────────────────────────
+	# Block 1 pre-filled: clears 3 collapsibles (HP=1 each) moving right in row 3.
+	# Block 2 hint: direction UP given, player fills in the actions.
+	# Block 3 fully blank: player must figure out the final approach to exit (8,0).
+	# Full solution: block2 then=move_up else=move_right
+	#                block3 dir=RIGHT cond=is_free then=move_right else=move_up
+	"Level 9": [
+		{
+			"repeat_count":    10,
+			"check_direction": "RIGHT",
+			"check_condition": "is_obstacle",
+			"then_action":     "attack",
+			"else_action":     "move_right"
+		},
+		{
+			"repeat_count":    2,
+			"check_direction": "UP",
+			"check_condition": "is_free",
+			"then_action":     "?",
+			"else_action":     "?"
+		},
+	],
+
+	# ── Final Level ──────────────────────────────────────────────────────────────
+	# Has buttons, locks, and collapsibles. Most challenging level.
+	# Block 1: direction RIGHT given — player works out the condition and actions.
+	# Block 2: condition is_free given — player works out direction and actions.
+	# Block 3: attack hint — direction and else blank, but ATTACK is pre-filled.
+	# Block 4: fully blank — player must work out the final path to exit (6,4).
+	# Full solution: block1 cond=is_free then=move_right else=move_up
+	#               block2 dir=UP then=move_up else=move_right
+	#               block3 dir=RIGHT then=attack else=move_right
+	#               block4 dir=UP cond=is_free then=move_up else=move_right
+	"Final Level": [
+		{
+			"repeat_count":    4,
+			"check_direction": "RIGHT",
+			"check_condition": "?",
+			"then_action":     "?",
+			"else_action":     "?"
+		},
+		{
+			"repeat_count":    4,
+			"check_direction": "?",
+			"check_condition": "is_free",
+			"then_action":     "?",
+			"else_action":     "?"
+		},
+		{
+			"repeat_count":    8,
+			"check_direction": "?",
+			"check_condition": "is_obstacle",
+			"then_action":     "attack",
+			"else_action":     "?"
+		},
+		{
+			"repeat_count":    6,
 			"check_direction": "?",
 			"check_condition": "?",
 			"then_action":     "?",
