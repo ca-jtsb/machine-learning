@@ -94,7 +94,7 @@ func _build_ui() -> void:
 	repeat_row.add_theme_constant_override("separation", 5)
 	vbox.add_child(repeat_row)
 
-	_lbl(repeat_row, "↺  REPEAT", 14, COLOR_TEXT, true)
+	_lbl(repeat_row, "↺  LOOP", 14, COLOR_TEXT, true)
 
 	_repeat_spin = SpinBox.new()
 	_repeat_spin.min_value = MIN_REPEAT
