@@ -854,37 +854,150 @@ func _show_tutorial(level_index: int) -> void:
 	run_button.disabled = true
 	overlay.setup(steps)
 
+# ══════════════════════════════════════════════════════════════════════════════
+# TUTORIAL STEPS — edit here to change dialogue, pointers, or box positions.
+#
+# Each step is a Dictionary with these keys:
+#   "text"        — RichTextLabel BBCode string shown in the dialogue box.
+#                   Use [b]bold[/b] for emphasis.
+#   "pointer_pos" — Vector2 screen position the arrow points to.
+#                   Set to null to hide the pointer entirely.
+#   "box_pos"     — (optional) Vector2 where the dialogue box appears.
+#                   Defaults to DEFAULT_POS in tutorial_overlay.gd (210, 300).
+#   "box_size"    — (optional) Vector2 size of the dialogue box.
+#                   Defaults to DEFAULT_SIZE in tutorial_overlay.gd (720, 160).
+#
+# Pointer reference positions (1152×648 screen, standard palette-left layout):
+#   Palette buttons (up/dn/lt/rt/atk/loop/append): x≈80, y≈40/80/120/160/200/240/280
+#   Grid center:      Vector2(576, 272)
+#   Workspace panel:  Vector2(576, 590)
+#   Action counter:   Vector2(1060, 30)
+#   Run button:       Vector2(1064, 624)
+#   Backspace button: Vector2(1064, 580)
+#
+# Phase 2 layout (palette hidden, grid at x=16, right panel x=816..1146):
+#   REPEAT spinbox:   Vector2(920,  50)
+#   IF row:           Vector2(920,  90)
+#   THEN row:         Vector2(920, 120)
+#   ELSE row:         Vector2(920, 150)
+#   Right panel mid:  Vector2(980, 270)
+#   Blank dropdowns:  Vector2(920, 100) approx — adjust per level
+#
+# To add a tutorial for a new level, add a new "N:" case below
+# where N is the zero-based index in the levels[] array.
+# ══════════════════════════════════════════════════════════════════════════════
 func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 	match level_index:
+
+		# ── LEVEL 1 (index 0) ─────────────────────────────────────────────────
 		0:
 			return [
-				{"text": "[b]Welcome![/b]\n\nYour robot slides until it hits a wall.", "pointer_pos": null},
-				{"text": "Click commands to build your program.", "pointer_pos": Vector2(97, 200)},
-				{"text": "Commands appear in the workspace below.", "pointer_pos": Vector2(500, 530)},
-				{"text": "Press RUN to execute.", "pointer_pos": Vector2(940, 610)},
-				{"text": "Reach the EXIT tile!", "pointer_pos": Vector2(850, 300)},
+				{
+					"text": "[b]Hey there, fellow programmer![/b]\n\nOur company is about to release a groundbreaking system — but a cyberattack from our rivals has corrupted it. We need you to regain control!",
+					"pointer_pos": null,
+				},
+				{
+					"text": "Your goal is to create a sequence of movements for the robot to successfully reach the exit.",
+					"pointer_pos": null,   # TODO: point to EXIT tile once its screen position is known
+				},
+				{
+					"text": "These buttons are your controls. Moving [b]Up, Down, Left, or Right[/b] slides the robot in that direction until it hits a wall.",
+					"pointer_pos": Vector2(80, 140),   # points at the movement buttons in the palette
+				},
+				{
+					"text": "[b]&&  APPEND[/b] lets you combine two moves into a single action slot.",
+					"pointer_pos": Vector2(80, 280),   # points at the Append button
+				},
+				{
+					"text": "The moves you choose appear down here in the workspace, in the order they will run.",
+					"pointer_pos": Vector2(576, 590),  # points at the workspace panel
+				},
+				{
+					"text": "When you are ready, press [b]RUN PROGRAM[/b] to send your sequence to the robot.",
+					"pointer_pos": Vector2(1064, 624), # points at the Run button
+				},
+				{
+					"text": "Watch this counter carefully. Each level has an action limit — don't go over it!\n\nWe're counting on you. Good luck!",
+					"pointer_pos": Vector2(1060, 30),  # points at the action counter top-right
+				},
 			]
+
+		# ── LEVEL 2 (index 1) ─────────────────────────────────────────────────
 		1:
 			return [
-				{"text": "These cracked blocks can be broken with ATTACK.", "pointer_pos": Vector2(580, 390)},
-				{"text": "Use ATTACK to reduce a block's HP to zero.", "pointer_pos": Vector2(97, 290)},
+				{
+					"text": "Boxes are blocking the path! The number on each box shows how many hits it takes to break it.",
+					"pointer_pos": Vector2(576, 272),  # TODO: point at a collapsible block on the grid
+				},
+				{
+					"text": "Use [b]ATTACK[/b] to hit a box. You can also use [b]LOOP[/b] to hit it multiple times in one slot.",
+					"pointer_pos": Vector2(80, 200),   # points at the Attack button in palette
+				},
 			]
+
+		# ── LEVEL 3 (index 2) ─────────────────────────────────────────────────
 		2:
 			return [
-				{"text": "Even blocks open on even-numbered actions.", "pointer_pos": Vector2(850, 197)},
-				{"text": "Odd blocks open on odd-numbered actions.", "pointer_pos": Vector2(850, 420)},
+				{
+					"text": "[b]Even blocks[/b] only open when the action that reaches them is even-numbered — action 2, 4, 6, and so on.",
+					"pointer_pos": null,   # TODO: point at an even block on this level's grid
+				},
+				{
+					"text": "[b]Odd blocks[/b] open on odd-numbered actions — 1, 3, 5...\n\nPlan your sequence carefully so you have a clear path when you need it!",
+					"pointer_pos": null,   # TODO: point at an odd block on this level's grid
+				},
 			]
+
+		# ── LEVEL 4 (index 3) ─────────────────────────────────────────────────
+		3:
+			return [
+				{
+					"text": "Locked doors are blocking the path. Find the switch and step on it to unlock the door!",
+					"pointer_pos": null,   # TODO: point at the lock or switch tile
+				},
+			]
+
+		# ── LEVEL 7 (index 6) — Phase 2 introduction ──────────────────────────
 		6:
 			return [
-				{"text": "[b]New: REPEAT-IF-ELSE![/b]\n\nYou now have a blueprint to fill in.", "pointer_pos": null},
-				{"text": "Pick a direction to sense and whether it's free or blocked.", "pointer_pos": null},
-				{"text": "THEN runs when the condition is true. ELSE runs otherwise.", "pointer_pos": null},
-				{"text": "The robot now moves ONE tile per step — no more sliding.", "pointer_pos": null},
+				{
+					"text": "Before you go further — the system is handing you something new.\n\nUp until now you've been pressing commands one by one. This sector is different. You'll be given a [b]blueprint[/b] — a program that's already half-written. Your job is to fill in the blanks.",
+					"pointer_pos": null,
+				},
+				{
+					"text": "See the [b]REPEAT[/b] block? It runs whatever is inside it N times in a row. Each time it runs, it checks the situation fresh.\n\nHere's the key difference: the robot now moves [b]exactly one tile per iteration[/b]. It does not slide.",
+					"pointer_pos": Vector2(920, 50),   # points at the REPEAT header / spinbox
+				},
+				{
+					"text": "Inside the repeat there is always an [b]IF[/b] and an [b]ELSE[/b].\n\nEvery iteration, the robot asks the IF question. If the answer is yes — it does the IF action. If no — it does the ELSE action. One or the other. Never both.",
+					"pointer_pos": Vector2(920, 110),  # points at the IF/ELSE rows
+				},
+				{
+					"text": "The condition always looks like: [b]direction == isFree[/b]\n\n[b]==[/b] means 'is equal to' — it is asking a question, not setting something.\n[b]isFree[/b] means the tile is passable. [b]isObstacle[/b] means it is blocked.",
+					"pointer_pos": Vector2(920, 90),   # points at the IF condition row
+				},
+				{
+					"text": "See the blank dropdowns? That's what you are filling in.\n\nThe structure is fixed. You choose what goes inside — the direction to check, the condition, and what action to take.",
+					"pointer_pos": Vector2(920, 100),  # points at the blank dropdown area
+				},
 			]
-		8:  # Level 9 (index 8)
+
+		# ── LEVEL 9 (index 8) — first independent attempt ─────────────────────
+		8:
 			return [
-				{"text": "[b]Your turn![/b]\n\nOkay, now try out the REPEAT mechanic on your own!\n\nFill in the blank dropdowns and hit RUN to see if you can solve it.", "pointer_pos": null},
+				{
+					"text": "[b]Your turn![/b]\n\nFill in all the blank dropdowns and hit RUN. You've seen how this works — now figure it out yourself!",
+					"pointer_pos": Vector2(920, 100),  # points at blank dropdowns in right panel
+				},
 			]
+
+		# ── Add new levels below this line ────────────────────────────────────
+		# Example:
+		# 9:  # Level 10 (index 9)
+		#   return [
+		#     { "text": "Your dialogue here.", "pointer_pos": Vector2(x, y) },
+		#   ]
+
 	return []
 
 # ── UI helpers ─────────────────────────────────────────────────────────────────
