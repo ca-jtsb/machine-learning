@@ -76,6 +76,7 @@ texture = ExtResource("3_gjsn7")
 expand_mode = 3
 
 [node name="DimOverlay" type="ColorRect" parent="."]
+visible = false
 offset_right = 40.0
 offset_bottom = 40.0
 color = Color(0, 0, 0, 1)

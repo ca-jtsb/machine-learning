@@ -1,6 +1,6 @@
 extends Node2D
 
-const TutorialOverlay    = preload("res://scenes/tutorial_overlay.tscn")
+const TutorialOverlay     = preload("res://scenes/tutorial_overlay.tscn")
 const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 # ── Scene references ───────────────────────────────────────────────────────────
@@ -23,123 +23,171 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
 	"res://levels/level_1.tres",
-	"res://levels/level_2.tres",
-	"res://levels/level_3.tres",
-	"res://levels/level_4.tres",
-	"res://levels/level_5.tres",
-	"res://levels/level_6.tres",
-	"res://levels/level_7.tres",
-	"res://levels/level_8.tres",
-	"res://levels/level_9.tres",
-	"res://levels/level_10.tres",
+	#"res://levels/level_2.tres",
+	#"res://levels/level_3.tres",
+	#"res://levels/level_4.tres",
+	#"res://levels/level_5.tres",
+	#"res://levels/level_6.tres",
+	#"res://levels/level_7.tres",
+	#"res://levels/level_8.tres",
+	#"res://levels/level_9.tres",
+	#"res://levels/level_10.tres",
 ]
 
-# ── IF-ELSE unlock threshold ───────────────────────────────────────────────────
-# Levels AT OR ABOVE this index can use IF-ELSE mode (if their .tres opts in).
-# SET TO 0  → IF-ELSE works immediately for testing (skips no levels).
-# SET TO 6  → normal game: levels 1-6 standard, level 7+ can be IF-ELSE.
 const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
 
 # ── Blueprint definitions ─────────────────────────────────────────────────────
-# Blueprints live here in code, NOT in .tres files, because Godot's resource
-# format cannot reliably serialize nested Dictionaries with null values.
-# Key = level_name string (must match the level_name field in the .tres).
-# Each entry is an Array of block definitions. Use "?" for blank dropdown slots.
+# "?" = blank dropdown. All other string values are pre-filled (read-only).
+# compound_condition / compound_then / compound_else keys enable && in those slots.
 const BLUEPRINTS : Dictionary = {
 	"Level 7 - The Algorithm": [
-		{
-			"repeat_count":    6,
-			"check_direction": "?",
-			"check_condition": "?",
-			"then_action":     "?",
-			"else_action":     "?"
-		},
-		{
-			"repeat_count":    12,
-			"check_direction": "?",
-			"check_condition": "?",
-			"then_action":     "?",
-			"else_action":     "?"
-		}
+		{ "repeat_count": 6,  "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
+		{ "repeat_count": 12, "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
 	],
-	# ── Level 8: Break all collapsibles then reach EXIT ───────────────────────
-	# Row 2 has 7 collapsible blocks (HP=3 each) between player and exit.
-	# Strategy: if RIGHT is obstacle → ATTACK, else → MOVE RIGHT.
-	# 7 blocks × 3 HP = 21 attacks + 7 moves = 28 minimum → use 35 for safety.
-	# All slots pre-filled — player just runs it to see IF-ELSE in action.
 	"Level 8": [
-		{
-			"repeat_count":    35,
-			"check_direction": "RIGHT",
-			"check_condition": "is_obstacle",
-			"then_action":     "attack",
-			"else_action":     "move_right"
-		}
+		{ "repeat_count": 35, "check_direction": "RIGHT", "check_condition": "is_obstacle", "then_action": "attack", "else_action": "move_right" },
 	],
 
-	# ── Level 9 ─────────────────────────────────────────────────────────────────
-	# Block 1 pre-filled: clears 3 collapsibles (HP=1 each) moving right in row 3.
-	# Block 2 hint: direction UP given, player fills in the actions.
-	# Block 3 fully blank: player must figure out the final approach to exit (8,0).
-	# Full solution: block2 then=move_up else=move_right
-	#                block3 dir=RIGHT cond=is_free then=move_right else=move_up
+	# ── Level 9: ALL blank — player fills direction, condition, and actions ──────
 	"Level 9": [
 		{
-			"repeat_count":    10,
-			"check_direction": "RIGHT",
-			"check_condition": "is_obstacle",
-			"then_action":     "attack",
-			"else_action":     "move_right"
+			"repeat_count": 8,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"then_action": "?",
+			"else_action": "?"
 		},
 		{
-			"repeat_count":    2,
-			"check_direction": "UP",
-			"check_condition": "is_free",
-			"then_action":     "?",
-			"else_action":     "?"
+			"repeat_count": 4,
+			"check_direction": "UP", "check_condition": "is_free",
+			"then_action": "?",
+			"else_action": "?"
 		},
 	],
 
-	# ── Final Level ──────────────────────────────────────────────────────────────
-	# Has buttons, locks, and collapsibles. Most challenging level.
-	# Block 1: direction RIGHT given — player works out the condition and actions.
-	# Block 2: condition is_free given — player works out direction and actions.
-	# Block 3: attack hint — direction and else blank, but ATTACK is pre-filled.
-	# Block 4: fully blank — player must work out the final path to exit (6,4).
-	# Full solution: block1 cond=is_free then=move_right else=move_up
-	#               block2 dir=UP then=move_up else=move_right
-	#               block3 dir=RIGHT then=attack else=move_right
-	#               block4 dir=UP cond=is_free then=move_up else=move_right
+	# ── Level 9 ALT: introduced after solving, shows && condition ──────────────
+	"Level 9 - Alt": [
+		{
+			"repeat_count": 11,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
+			"then_action": "move_up",
+			"else_action": "move_right", "compound_else": true, "else_action2": "attack"
+		},
+	],
+
+	# ── Level 10: player fills blank slots ─────────────────────────────────────
+	"Level 10": [
+		{
+			"repeat_count": 7,
+			"check_direction": "RIGHT", "check_condition": "is_free",
+			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
+			"then_action": "?",
+			"else_action": "?"
+		},
+		{
+			"repeat_count": 8,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"then_action": "move_right", "compound_then": true, "then_action2": "attack",
+			"else_action": "move_right"
+		},
+		{
+			"repeat_count": 5,
+			"check_direction": "DOWN", "check_condition": "is_free",
+			"then_action": "move_down",
+			"else_action": "move_left"
+		},
+	],
+
+	# ── "Final Level" alias — matches level_name in level_10.tres ──────────────
+	# If your .tres uses level_name = "Final Level", this entry handles it.
+	# If your .tres uses "Level 10", the entry above handles it. Keep both.
 	"Final Level": [
 		{
-			"repeat_count":    4,
-			"check_direction": "RIGHT",
-			"check_condition": "?",
-			"then_action":     "?",
-			"else_action":     "?"
+			"repeat_count": 3,
+			"check_direction": "RIGHT", "check_condition": "is_free",
+			"then_action": "?",
+			"else_action": "?"
 		},
 		{
-			"repeat_count":    4,
-			"check_direction": "?",
-			"check_condition": "is_free",
-			"then_action":     "?",
-			"else_action":     "?"
+			"repeat_count": 4,
+			"check_direction": "UP", "check_condition": "is_free",
+			"then_action": "?",
+			"else_action": "?"
 		},
 		{
-			"repeat_count":    8,
-			"check_direction": "?",
-			"check_condition": "is_obstacle",
-			"then_action":     "attack",
-			"else_action":     "?"
+			"repeat_count": 10,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"then_action": "?",
+			"else_action": "?"
 		},
 		{
-			"repeat_count":    6,
-			"check_direction": "?",
-			"check_condition": "?",
-			"then_action":     "?",
-			"else_action":     "?"
-		}
+			"repeat_count": 6,
+			"check_direction": "DOWN", "check_condition": "is_free",
+			"then_action": "?",
+			"else_action": "?"
+		},
 	],
+	"Final Level - Alt": [
+		{
+			"repeat_count": 7,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
+			"then_action": "move_up",
+			"else_action": "move_right"
+		},
+		{
+			"repeat_count": 8,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"then_action": "move_right", "compound_then": true, "then_action2": "attack",
+			"else_action": "move_right"
+		},
+		{
+			"repeat_count": 5,
+			"check_direction": "DOWN", "check_condition": "is_free",
+			"then_action": "move_down",
+			"else_action": "move_left"
+		},
+	],
+
+	# ── Level 10 ALT ──────────────────────────────────────────────────────────
+	"Level 10 - Alt": [
+		{
+			"repeat_count": 7,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
+			"then_action": "move_up",
+			"else_action": "move_right"
+		},
+		{
+			"repeat_count": 8,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"then_action": "move_right", "compound_then": true, "then_action2": "attack",
+			"else_action": "move_right"
+		},
+		{
+			"repeat_count": 5,
+			"check_direction": "DOWN", "check_condition": "is_free",
+			"then_action": "move_down",
+			"else_action": "move_left"
+		},
+	],
+}
+
+# ── Alt-solution config: which levels show alt after solving ───────────────────
+# Key = level_name, value = { "hint": text, "alt_key": BLUEPRINTS key to show }
+const ALT_SOLUTIONS : Dictionary = {
+	"Level 9": {
+		"hint": "Great work! But did you know you can combine conditions with [b]&&[/b]?\nThat lets you check TWO directions at once — reducing your blocks from 2 down to 1!",
+		"alt_key": "Level 9 - Alt"
+	},
+	"Level 10": {
+		"hint": "Excellent! Notice Block 1 used [b]RIGHT == isFree && UP == isFree[/b].\nHere's an alternative — using [b]RIGHT == isObstacle && UP == isFree[/b] instead.\nSame result, different way to think about it!",
+		"alt_key": "Level 10 - Alt"
+	},
+	"Final Level": {
+		"hint": "Excellent! Notice Block 1 used [b]RIGHT == isFree && UP == isFree[/b].\nHere's an alternative — using [b]RIGHT == isObstacle && UP == isFree[/b] instead.\nSame result, different way to think about it!",
+		"alt_key": "Final Level - Alt"
+	},
 }
 
 # ── State ──────────────────────────────────────────────────────────────────────
@@ -152,10 +200,12 @@ var max_actions           : int  = 8
 var _level_complete       : bool = false
 var _is_if_else_mode      : bool = false
 var _tutorial_seen        : Array[bool] = []
+var _current_level_name   : String = ""
+var _showing_alt          : bool   = false   # suppresses level_complete popup during alt demo
 
 # ── IF-ELSE blueprint widgets ──────────────────────────────────────────────────
-var _if_else_blocks    : Array           = []   # Array[RepeatIfElseBlock]
-var _if_else_workspace : VBoxContainer  = null
+var _if_else_blocks    : Array            = []
+var _if_else_workspace : VBoxContainer   = null
 var _if_else_scroll    : ScrollContainer = null
 var _if_else_panel     : PanelContainer  = null
 
@@ -167,6 +217,15 @@ var _pending_first_action : CommandBlock.CommandType = CommandBlock.CommandType.
 # ── Help panel ─────────────────────────────────────────────────────────────────
 var _help_panel  : PanelContainer = null
 var _help_button : Button         = null
+
+# ── Layout constants ───────────────────────────────────────────────────────────
+const GRID_X_STANDARD    : float = 168.0
+const GRID_X_IF_ELSE     : float = 16.0
+const GRID_Y             : float = 8.0
+const IFELSE_PANEL_X     : float = 816.0
+const IFELSE_PANEL_RIGHT : float = 1146.0
+const IFELSE_PANEL_TOP   : float = 8.0
+const IFELSE_PANEL_BOTTOM : float = -112.0
 
 # ══════════════════════════════════════════════════════════════════════════════
 func _ready() -> void:
@@ -193,26 +252,9 @@ func _ready() -> void:
 	_build_if_else_workspace()
 	_load_level(current_level_index)
 
-# ── IF-ELSE right-side panel (built once, toggled per level) ──────────────────
-# Layout: right of the grid, full height, scrollable VBox of REPEAT-IF-ELSE blocks.
-# Grid is at x=210, TILE_SIZE=64, 9 cols = 576px wide → right edge at x=786.
-# This panel occupies x=794 to screen right edge.
-# Layout constants — tile=88, grid=792x528
-# Standard mode:  GameWorld at (168, 8),  workspace below grid
-# IF-ELSE mode:   GameWorld at (16, 8),   right panel beside grid, no bottom workspace
-const GRID_X_STANDARD   : float = 168.0   # palette(160) + gap(8)
-const GRID_X_IF_ELSE    : float = 16.0    # no palette, small left margin
-const GRID_Y            : float = 8.0
-const IFELSE_PANEL_X    : float = 816.0   # 16 + 792 + 8
-const IFELSE_PANEL_RIGHT : float = 1146.0
-const IFELSE_PANEL_TOP   : float = 8.0    # align with grid top
-# Panel bottom matches grid bottom: grid_y(8) + grid_h(528) = 536, so offset from bottom = -(648-536) = -112
-const IFELSE_PANEL_BOTTOM : float = -112.0
-
+# ── IF-ELSE right-side panel ───────────────────────────────────────────────────
 func _build_if_else_workspace() -> void:
 	var ui_layer = $UI
-
-	# Outer panel container anchored to right side
 	var panel := PanelContainer.new()
 	panel.name          = "IfElsePanel"
 	panel.anchor_left   = 0.0; panel.anchor_right  = 0.0
@@ -225,8 +267,8 @@ func _build_if_else_workspace() -> void:
 	var style := StyleBoxFlat.new()
 	style.bg_color     = Color(0.08, 0.08, 0.12, 1.0)
 	style.border_color = Color(0.95, 0.55, 0.05, 1.0)
-	style.border_width_left  = 2; style.border_width_right  = 2
-	style.border_width_top   = 2; style.border_width_bottom = 2
+	for side in ["left","right","top","bottom"]:
+		style.set("border_width_" + side, 2)
 	panel.add_theme_stylebox_override("panel", style)
 	panel.visible = false
 	ui_layer.add_child(panel)
@@ -246,7 +288,6 @@ func _build_if_else_workspace() -> void:
 	_if_else_workspace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_if_else_scroll.add_child(_if_else_workspace)
 
-	# Store panel reference so we can show/hide it
 	_if_else_panel = panel
 
 # ── Help UI ────────────────────────────────────────────────────────────────────
@@ -266,28 +307,24 @@ func _build_help_ui() -> void:
 	_help_panel = PanelContainer.new()
 	_help_panel.anchor_left = 1.0; _help_panel.anchor_right  = 1.0
 	_help_panel.anchor_top  = 0.5; _help_panel.anchor_bottom = 0.5
-	_help_panel.offset_left = -310.0; _help_panel.offset_right  = -52.0
-	_help_panel.offset_top  = -200.0; _help_panel.offset_bottom =  200.0
+	_help_panel.offset_left = -310.0; _help_panel.offset_right = -52.0
+	_help_panel.offset_top  = -200.0; _help_panel.offset_bottom = 200.0
 	var style := StyleBoxFlat.new()
-	style.bg_color      = Color(0.10, 0.10, 0.16, 0.97)
-	style.border_color  = Color(0.40, 0.40, 0.70, 1.0)
+	style.bg_color     = Color(0.10, 0.10, 0.16, 0.97)
+	style.border_color = Color(0.40, 0.40, 0.70, 1.0)
 	for side in ["left","right","top","bottom"]:
 		style.set("border_width_" + side, 2)
-		style.set("corner_radius_top_" + ("left" if side == "left" else "right"), 6)
-	style.corner_radius_top_left     = 6; style.corner_radius_top_right    = 6
-	style.corner_radius_bottom_left  = 6; style.corner_radius_bottom_right = 6
+	style.corner_radius_top_left = 6; style.corner_radius_top_right    = 6
+	style.corner_radius_bottom_left = 6; style.corner_radius_bottom_right = 6
 	_help_panel.add_theme_stylebox_override("panel", style)
 	var margin := MarginContainer.new()
-	margin.add_theme_constant_override("margin_left",  12)
-	margin.add_theme_constant_override("margin_right", 12)
-	margin.add_theme_constant_override("margin_top",   10)
-	margin.add_theme_constant_override("margin_bottom",10)
+	for side in ["left","right","top","bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 12 if side in ["left","right"] else 10)
 	_help_panel.add_child(margin)
 	var vbox := VBoxContainer.new()
 	vbox.add_theme_constant_override("separation", 6)
 	margin.add_child(vbox)
-	var title := Label.new()
-	title.text = "Commands"
+	var title := Label.new(); title.text = "Commands"
 	title.add_theme_font_size_override("font_size", 16)
 	title.add_theme_color_override("font_color", Color(0.7, 0.8, 1.0))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -332,8 +369,9 @@ func _load_level(index: int) -> void:
 	if data == null:
 		push_error("Could not load: " + levels[index]); return
 
-	max_actions     = data.action_limit
-	_level_complete = false
+	max_actions            = data.action_limit
+	_level_complete        = false
+	_current_level_name    = data.level_name
 	block_manager.load_level(data)
 	robot.reset_to(data.player_start)
 	_clear_commands()
@@ -345,7 +383,6 @@ func _load_level(index: int) -> void:
 	if title_label: title_label.text = data.level_name
 	_clear_palette_hint()
 
-	# Decide mode
 	var unlock_ok : bool = (index >= IF_ELSE_UNLOCK_FROM_LEVEL)
 	_is_if_else_mode = data.use_if_else_mode and unlock_ok
 
@@ -372,7 +409,6 @@ func _enter_standard_mode(data: LevelData) -> void:
 	$UI/WorkspacePanel.visible     = true
 	workspace.visible              = true
 	if _if_else_panel: _if_else_panel.visible = false
-	# Move grid to standard position: right of palette
 	$GameWorld.position = Vector2(GRID_X_STANDARD, GRID_Y)
 	_refresh_palette(data.available_commands)
 
@@ -385,34 +421,44 @@ func _enter_if_else_mode(data: LevelData) -> void:
 	$UI/WorkspacePanel.visible     = false
 	workspace.visible              = false
 	if _if_else_panel: _if_else_panel.visible = true
-	# Move grid left — no palette, so grid can start near screen edge
 	$GameWorld.position = Vector2(GRID_X_IF_ELSE, GRID_Y)
+	_populate_blueprint(data.level_name)
 
-	# Clear previous blueprint widgets
+func _populate_blueprint(level_name: String) -> void:
 	for child in _if_else_workspace.get_children():
 		child.queue_free()
 	_if_else_blocks.clear()
 
-	# Look up blueprint from BLUEPRINTS table using the level name
-	var blueprint : Array = BLUEPRINTS.get(data.level_name, [])
+	var blueprint : Array = BLUEPRINTS.get(level_name, [])
+	if blueprint.is_empty():
+		var placeholder := Label.new()
+		placeholder.text = "No blueprint for: " + level_name
+		placeholder.add_theme_color_override("font_color", Color.YELLOW)
+		_if_else_workspace.add_child(placeholder)
+		return
+
 	for block_def in blueprint:
-		var widget : RepeatIfElseBlock = RepeatIfElseBlock.new()
-		widget.repeat_count    = block_def.get("repeat_count",    6)
-		widget.check_direction = _blueprint_val(block_def.get("check_direction", "?"))
-		widget.check_condition = _blueprint_val(block_def.get("check_condition", "?"))
-		widget.then_action     = _blueprint_val(block_def.get("then_action",     "?"))
-		widget.else_action     = _blueprint_val(block_def.get("else_action",     "?"))
+		var widget : RepeatIfElseBlock = _make_widget_from_def(block_def)
 		_if_else_workspace.add_child(widget)
 		_if_else_blocks.append(widget)
 
-	if _if_else_blocks.is_empty():
-		var placeholder := Label.new()
-		placeholder.text = "No blueprint found for: " + data.level_name
-		placeholder.add_theme_color_override("font_color", Color.YELLOW)
-		_if_else_workspace.add_child(placeholder)
+func _make_widget_from_def(block_def: Dictionary) -> RepeatIfElseBlock:
+	var w : RepeatIfElseBlock = RepeatIfElseBlock.new()
+	w.repeat_count    = block_def.get("repeat_count", 6)
+	w.check_direction = _bval(block_def.get("check_direction", "?"))
+	w.check_condition = _bval(block_def.get("check_condition", "?"))
+	w.use_compound_condition = block_def.get("compound_condition", false)
+	w.check_direction2 = _bval(block_def.get("check_direction2", "?"))
+	w.check_condition2 = _bval(block_def.get("check_condition2", "?"))
+	w.then_action      = _bval(block_def.get("then_action", "?"))
+	w.use_compound_then = block_def.get("compound_then", false)
+	w.then_action2      = _bval(block_def.get("then_action2", "?"))
+	w.else_action      = _bval(block_def.get("else_action", "?"))
+	w.use_compound_else = block_def.get("compound_else", false)
+	w.else_action2      = _bval(block_def.get("else_action2", "?"))
+	return w
 
-# Returns null (blank dropdown) if value is "?" sentinel, otherwise returns the value as-is.
-func _blueprint_val(val: Variant) -> Variant:
+func _bval(val: Variant) -> Variant:
 	if val == "?": return null
 	return val
 
@@ -434,7 +480,6 @@ func _on_run_pressed() -> void:
 			is_executing = false; run_button.disabled = false; return
 		_execute_next()
 
-# IF-ELSE execution: build CommandBlocks from widgets and run them
 func _execute_if_else_program() -> void:
 	var cbs : Array[CommandBlock] = []
 	for widget in _if_else_blocks:
@@ -470,7 +515,6 @@ func _on_program_finished_if_else() -> void:
 	run_button.disabled   = false
 	robot.set_meta("level_done", false)
 
-# Standard execution — fully awaited chain, no signal re-entry issues
 func _execute_next() -> void:
 	if current_command_index >= command_blocks.size():
 		_on_program_finished(); return
@@ -479,13 +523,11 @@ func _execute_next() -> void:
 	total_actions_taken += 1
 	block_manager.on_action_taken(total_actions_taken)
 	current_command_index += 1
-	await cmd.execute(robot)           # await here — robot emits action_completed when done
-	if not is_executing: return        # level may have completed mid-command
+	await cmd.execute(robot)
+	if not is_executing: return
 	await get_tree().create_timer(0.15).timeout
 	_execute_next()
 
-# action_completed is still emitted by the robot but we no longer use it to drive
-# the execution loop — _execute_next() awaits directly. Kept for compatibility.
 func _on_action_completed() -> void:
 	pass
 
@@ -505,13 +547,116 @@ func _on_program_finished() -> void:
 	_update_counter()
 	_clear_palette_hint()
 
+# ── Level complete flow ────────────────────────────────────────────────────────
 func _on_level_complete() -> void:
 	_level_complete     = true
 	is_executing        = false
 	run_button.disabled = true
 	_clear_highlights()
 	robot.set_meta("level_done", true)
-	_show_level_complete_popup()
+
+	# During alt demo: reveal Continue button then reset so player can run again
+	if _showing_alt:
+		# Reveal the Continue button now that they've seen the alt work
+		var cont = _if_else_workspace.get_node_or_null("AltContinueBtn")
+		if cont: cont.visible = true
+		var hint = _if_else_workspace.get_node_or_null("AltHintLabel")
+		if hint: hint.visible = false
+		await get_tree().create_timer(0.8).timeout
+		var data : LevelData = load(levels[current_level_index]) as LevelData
+		block_manager.load_level(data)
+		robot.reset_to(data.player_start)
+		robot.set_meta("level_done", false)
+		_level_complete = false
+		run_button.disabled = false
+		return
+
+	# Check if this level has an alt-solution to show before proceeding
+	if ALT_SOLUTIONS.has(_current_level_name):
+		_show_alt_solution_flow(_current_level_name)
+	else:
+		_show_level_complete_popup()
+
+# ── Alt-solution flow ──────────────────────────────────────────────────────────
+func _show_alt_solution_flow(level_name: String) -> void:
+	var alt_info : Dictionary = ALT_SOLUTIONS[level_name]
+	var hint_text : String    = alt_info["hint"]
+	var alt_key   : String    = alt_info["alt_key"]
+
+	# Show assistant hint overlay
+	_show_assistant_overlay(hint_text, func():
+		# After hint dismissed → load alt blueprint into panel
+		_load_alt_blueprint(alt_key, func():
+			# After alt demo → normal level complete popup
+			_show_level_complete_popup()
+		)
+	)
+
+func _show_assistant_overlay(text: String, on_done: Callable) -> void:
+	# Reuse TutorialOverlay with a single step
+	var overlay = TutorialOverlay.instantiate()
+	$UI.add_child(overlay)
+	overlay.tutorial_finished.connect(func():
+		on_done.call()
+	)
+	var steps : Array[Dictionary] = [{"text": text, "pointer_pos": null}]
+	overlay.setup(steps)
+
+func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
+	_showing_alt = true   # suppress level_complete popup while alt is running
+
+	# Clear previous blueprint widgets
+	for child in _if_else_workspace.get_children():
+		child.queue_free()
+	_if_else_blocks.clear()
+
+	# Load alt blueprint blocks (all pre-filled, read-only)
+	var blueprint : Array = BLUEPRINTS.get(alt_key, [])
+	for block_def in blueprint:
+		var widget := _make_widget_from_def(block_def)
+		_if_else_workspace.add_child(widget)
+		_if_else_blocks.append(widget)
+
+	# Separator + Continue button — hidden until player runs the alt at least once
+	var sep := HSeparator.new()
+	sep.name = "AltSeparator"
+	_if_else_workspace.add_child(sep)
+
+	var continue_btn := Button.new()
+	continue_btn.name    = "AltContinueBtn"
+	continue_btn.text    = "▶  Continue to Next Level"
+	continue_btn.add_theme_font_size_override("font_size", 15)
+	continue_btn.custom_minimum_size = Vector2(0, 44)
+	continue_btn.visible = false   # hidden until alt is run successfully
+	continue_btn.pressed.connect(func():
+		_showing_alt = false
+		on_done.call()
+	)
+	_if_else_workspace.add_child(continue_btn)
+
+	var hint_lbl := Label.new()
+	hint_lbl.name = "AltHintLabel"
+	hint_lbl.text = "Run the program above to continue!"
+	hint_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	hint_lbl.add_theme_font_size_override("font_size", 13)
+	hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_if_else_workspace.add_child(hint_lbl)
+
+	# Ensure panel is visible (handles case where level was standard-mode)
+	if _if_else_panel and not _if_else_panel.visible:
+		_if_else_panel.visible = true
+		$GameWorld.position = Vector2(GRID_X_IF_ELSE, GRID_Y)
+
+	# Reset the level so player can watch (or try) the alt solution
+	var data : LevelData = load(levels[current_level_index]) as LevelData
+	block_manager.load_level(data)
+	robot.reset_to(data.player_start)
+	robot.set_meta("level_done", false)
+	_level_complete = false
+	run_button.disabled = false
+	# Player is now free to press RUN as many times as they like.
+	# When ready, they click "Continue to Next Level" above.
 
 func _show_level_complete_popup() -> void:
 	var popup = LevelCompleteScreen.instantiate()
@@ -600,9 +745,7 @@ func _refresh_palette(allowed: Array[String]) -> void:
 # ── Tutorial ───────────────────────────────────────────────────────────────────
 func _show_tutorial(level_index: int) -> void:
 	var steps := _get_tutorial_steps(level_index)
-	# If no steps for this level, skip — never disable the run button
-	if steps.is_empty():
-		return
+	if steps.is_empty(): return
 	var overlay = TutorialOverlay.instantiate()
 	$UI.add_child(overlay)
 	overlay.tutorial_finished.connect(func(): run_button.disabled = false)
@@ -631,10 +774,14 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 			]
 		6:
 			return [
-				{"text": "[b]New: REPEAT-IF-ELSE![/b]\n\nYou now have a blueprint — fill in the blank dropdowns.", "pointer_pos": null},
+				{"text": "[b]New: REPEAT-IF-ELSE![/b]\n\nYou now have a blueprint to fill in.", "pointer_pos": null},
 				{"text": "Pick a direction to sense and whether it's free or blocked.", "pointer_pos": null},
 				{"text": "THEN runs when the condition is true. ELSE runs otherwise.", "pointer_pos": null},
 				{"text": "The robot now moves ONE tile per step — no more sliding.", "pointer_pos": null},
+			]
+		8:  # Level 9 (index 8)
+			return [
+				{"text": "[b]Your turn![/b]\n\nOkay, now try out the REPEAT mechanic on your own!\n\nFill in the blank dropdowns and hit RUN to see if you can solve it.", "pointer_pos": null},
 			]
 	return []
 

@@ -7,9 +7,9 @@ enum CommandType {
 	MOVE_LEFT,
 	MOVE_RIGHT,
 	ATTACK,
-	LOOP,           # runs loop_action x3, counts as 1 turn
-	APPEND,         # runs first_action then second_action, counts as 1 turn
-	REPEAT_IF_ELSE, # new: repeat N times with per-cell if/else logic
+	LOOP,
+	APPEND,
+	REPEAT_IF_ELSE,
 }
 
 # ── Basic block data ───────────────────────────────────────────────────────────
@@ -18,17 +18,28 @@ var loop_action   : CommandType = CommandType.MOVE_UP
 var first_action  : CommandType = CommandType.MOVE_UP
 var second_action : CommandType = CommandType.MOVE_RIGHT
 
-# ── REPEAT_IF_ELSE block data (set by RepeatIfElseBlock widget) ────────────────
-# repeat_count    : how many iterations
-# check_direction : "UP" / "DOWN" / "LEFT" / "RIGHT"  — direction to sense
-# check_condition : "is_free" / "is_obstacle"
-# then_action     : CommandType (MOVE_*)  — action when condition is true
-# else_action     : CommandType (MOVE_*)  — action when condition is false
-var repeat_count    : int         = 6
-var check_direction : String      = "LEFT"
-var check_condition : String      = "is_free"
+# ── REPEAT_IF_ELSE data ────────────────────────────────────────────────────────
+var repeat_count    : int    = 6
+var check_direction : String = "LEFT"
+var check_condition : String = "is_free"
 var then_action     : CommandType = CommandType.MOVE_LEFT
 var else_action     : CommandType = CommandType.MOVE_UP
+
+# ── Compound condition (&&) ────────────────────────────────────────────────────
+# When use_compound_condition = true, the IF check becomes:
+#   (check_direction == check_condition) && (check_direction2 == check_condition2)
+var use_compound_condition  : bool   = false
+var check_direction2        : String = "UP"
+var check_condition2        : String = "is_free"
+
+# ── Compound then-action (&&) ─────────────────────────────────────────────────
+# When use_compound_then = true, then_action AND then_action2 both execute
+var use_compound_then  : bool        = false
+var then_action2       : CommandType = CommandType.ATTACK
+
+# When use_compound_else = true, else_action AND else_action2 both execute
+var use_compound_else  : bool        = false
+var else_action2       : CommandType = CommandType.ATTACK
 
 func _init(cmd_type: CommandType = CommandType.MOVE_UP) -> void:
 	command_type        = cmd_type
@@ -53,8 +64,6 @@ func _update_label() -> void:
 			text = "%s && %s" % [_symbol(first_action), _symbol(second_action)]
 			add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
 		CommandType.REPEAT_IF_ELSE:
-			# This type is rendered by the RepeatIfElseBlock widget, not as a Button.
-			# The CommandBlock itself is just a data carrier here.
 			text = "[IF-ELSE]"
 			add_theme_color_override("font_color", Color(1.0, 0.6, 0.1))
 
@@ -75,17 +84,14 @@ func execute(robot: Robot) -> void:
 		CommandType.MOVE_LEFT:  await robot.move_left()
 		CommandType.MOVE_RIGHT: await robot.move_right()
 		CommandType.ATTACK:     await robot.attack()
-
 		CommandType.LOOP:
 			for _i in 3:
 				await _run_silent(robot, loop_action)
 			robot.action_completed.emit()
-
 		CommandType.APPEND:
 			await _run_silent(robot, first_action)
 			await _run_silent(robot, second_action)
 			robot.action_completed.emit()
-
 		CommandType.REPEAT_IF_ELSE:
 			await _execute_repeat_if_else(robot)
 			robot.action_completed.emit()
@@ -93,30 +99,49 @@ func execute(robot: Robot) -> void:
 # ── REPEAT-IF-ELSE execution ───────────────────────────────────────────────────
 func _execute_repeat_if_else(robot: Robot) -> void:
 	for _i in repeat_count:
-		# Sense the cell in check_direction
-		var dir_offset : Vector2i = _dir_string_to_offset(check_direction)
-		var sense_cell : Vector2i = robot.grid_position + dir_offset
-		var sense_result : bool   = robot.sense_cell(sense_cell)  # true = free, false = blocked
+		var condition_met : bool = _evaluate_condition(robot)
 
-		var condition_met : bool
-		match check_condition:
-			"is_free":     condition_met = sense_result
-			"is_obstacle": condition_met = not sense_result
-			_:             condition_met = sense_result
+		if condition_met:
+			await _run_one_step(robot, then_action)
+			if use_compound_then:
+				await _run_one_step(robot, then_action2)
+		else:
+			await _run_one_step(robot, else_action)
+			if use_compound_else:
+				await _run_one_step(robot, else_action2)
 
-		var act : CommandType = then_action if condition_met else else_action
-		await _run_one_step(robot, act)
-
-		# Small delay between steps so movement is visible
 		await robot.get_tree().create_timer(0.12).timeout
 
-		# Stop early if level is complete (robot hit portal)
 		if robot.get_meta("level_done", false):
 			break
 
+func _evaluate_condition(robot: Robot) -> bool:
+	# Primary condition
+	var dir1_offset := _dir_string_to_offset(check_direction)
+	var sense1_cell := robot.grid_position + dir1_offset
+	var sense1       := robot.sense_cell(sense1_cell)  # true = free
+	var cond1 : bool
+	match check_condition:
+		"is_free":        cond1 = sense1
+		"is_obstacle":    cond1 = not sense1
+		_:                cond1 = sense1
+
+	if not use_compound_condition:
+		return cond1
+
+	# Compound: both conditions must be true (&&)
+	var dir2_offset := _dir_string_to_offset(check_direction2)
+	var sense2_cell := robot.grid_position + dir2_offset
+	var sense2       := robot.sense_cell(sense2_cell)
+	var cond2 : bool
+	match check_condition2:
+		"is_free":        cond2 = sense2
+		"is_obstacle":    cond2 = not sense2
+		_:                cond2 = sense2
+
+	return cond1 and cond2
+
 func _run_one_step(robot: Robot, t: CommandType) -> void:
-	# Per-cell movement: moves exactly ONE tile (not slide-until-wall)
-	# ATTACK is also valid inside REPEAT-IF-ELSE blocks
 	match t:
 		CommandType.MOVE_UP:    await robot.move_one_up()
 		CommandType.MOVE_DOWN:  await robot.move_one_down()
