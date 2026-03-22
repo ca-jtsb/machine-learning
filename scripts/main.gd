@@ -23,15 +23,15 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
 	"res://levels/level_1.tres",
-	#"res://levels/level_2.tres",
-	#"res://levels/level_3.tres",
-	#"res://levels/level_4.tres",
-	#"res://levels/level_5.tres",
-	#"res://levels/level_6.tres",
-	#"res://levels/level_7.tres",
-	#"res://levels/level_8.tres",
-	#"res://levels/level_9.tres",
-	#"res://levels/level_10.tres",
+	"res://levels/level_2.tres",
+	"res://levels/level_3.tres",
+	"res://levels/level_4.tres",
+	"res://levels/level_5.tres",
+	"res://levels/level_6.tres",
+	"res://levels/level_7.tres",
+	"res://levels/level_8.tres",
+	"res://levels/level_9.tres",
+	"res://levels/level_10.tres",
 ]
 
 const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
@@ -41,24 +41,24 @@ const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
 # compound_condition / compound_then / compound_else keys enable && in those slots.
 const BLUEPRINTS : Dictionary = {
 	"Level 7 - The Algorithm": [
-		{ "repeat_count": 6,  "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
-		{ "repeat_count": 12, "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
+		{ "repeat_count": 1,  "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
+		{ "repeat_count": 1, "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
 	],
 	"Level 8": [
-		{ "repeat_count": 35, "check_direction": "RIGHT", "check_condition": "is_obstacle", "then_action": "attack", "else_action": "move_right" },
+		{ "repeat_count": 1, "check_direction": "RIGHT", "check_condition": "is_obstacle", "then_action": "attack", "else_action": "move_right" },
 	],
 
 	# ── Level 9: ALL blank — player fills direction, condition, and actions ──────
 	"Level 9": [
 		{
-			"repeat_count": 8,
-			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 4,
-			"check_direction": "UP", "check_condition": "is_free",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
@@ -67,31 +67,33 @@ const BLUEPRINTS : Dictionary = {
 	# ── Level 9 ALT: introduced after solving, shows && condition ──────────────
 	"Level 9 - Alt": [
 		{
-			"repeat_count": 11,
+			"repeat_count": 1,
 			"check_direction": "RIGHT", "check_condition": "is_obstacle",
 			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
 			"then_action": "move_up",
-			"else_action": "move_right", "compound_else": true, "else_action2": "attack"
+			"else_action": "move_right", "compound_else": true, "else_action2": "attack",
+			"else2_attack_dir": "RIGHT"
 		},
 	],
 
 	# ── Level 10: player fills blank slots ─────────────────────────────────────
 	"Level 10": [
 		{
-			"repeat_count": 7,
+			"repeat_count": 1,
 			"check_direction": "RIGHT", "check_condition": "is_free",
 			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 8,
+			"repeat_count": 1,
 			"check_direction": "RIGHT", "check_condition": "is_obstacle",
-			"then_action": "move_right", "compound_then": true, "then_action2": "attack",
+			"then_action": "attack", "then_attack_dir": "RIGHT",
+			"compound_then": true, "then_action2": "move_right",
 			"else_action": "move_right"
 		},
 		{
-			"repeat_count": 5,
+			"repeat_count": 1,
 			"check_direction": "DOWN", "check_condition": "is_free",
 			"then_action": "move_down",
 			"else_action": "move_left"
@@ -103,53 +105,58 @@ const BLUEPRINTS : Dictionary = {
 	# If your .tres uses "Level 10", the entry above handles it. Keep both.
 	"Final Level": [
 		{
-			"repeat_count": 3,
-			"check_direction": "RIGHT", "check_condition": "is_free",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 4,
-			"check_direction": "UP", "check_condition": "is_free",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 10,
-			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 6,
-			"check_direction": "DOWN", "check_condition": "is_free",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 	],
 	"Final Level - Alt": [
 		{
-			"repeat_count": 7,
-			"check_direction": "RIGHT", "check_condition": "is_obstacle",
-			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
-			"then_action": "move_up",
-			"else_action": "move_right"
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
+			"compound_condition": true, "check_direction2": "?", "check_condition2": "?",
+			"then_action": "?",
+			"else_action": "?"
 		},
 		{
-			"repeat_count": 8,
-			"check_direction": "RIGHT", "check_condition": "is_obstacle",
-			"then_action": "move_right", "compound_then": true, "then_action2": "attack",
-			"else_action": "move_right"
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
+			"then_action": "?", "then_attack_dir": "?",
+			"else_action": "?"
 		},
 		{
-			"repeat_count": 5,
-			"check_direction": "DOWN", "check_condition": "is_free",
-			"then_action": "move_down",
-			"else_action": "move_left"
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
+			"then_action": "?",
+			"else_action": "?"
 		},
 	],
 
 	# ── Level 10 ALT ──────────────────────────────────────────────────────────
+	# Block 1: && condition teaches optimization — checks RIGHT==obstacle AND UP==free
+	# to decide whether to go up (T-junction) or keep going right (corridor).
+	# Block 2: attack RIGHT first, then step right — this order works because the
+	# robot stays put while attacking, only moving forward once the block is gone.
+	# Block 3: same as original — descend and exit.
 	"Level 10 - Alt": [
 		{
 			"repeat_count": 7,
@@ -161,7 +168,8 @@ const BLUEPRINTS : Dictionary = {
 		{
 			"repeat_count": 8,
 			"check_direction": "RIGHT", "check_condition": "is_obstacle",
-			"then_action": "move_right", "compound_then": true, "then_action2": "attack",
+			"then_action": "attack", "then_attack_dir": "RIGHT",
+			"compound_then": true, "then_action2": "move_right",
 			"else_action": "move_right"
 		},
 		{
@@ -202,6 +210,7 @@ var _is_if_else_mode      : bool = false
 var _tutorial_seen        : Array[bool] = []
 var _current_level_name   : String = ""
 var _showing_alt          : bool   = false   # suppresses level_complete popup during alt demo
+var _hit_wall             : bool   = false   # set true when robot walks into wall in Phase 2 → triggers failure
 
 # ── IF-ELSE blueprint widgets ──────────────────────────────────────────────────
 var _if_else_blocks    : Array            = []
@@ -242,6 +251,7 @@ func _ready() -> void:
 	run_button.pressed.connect(_on_run_pressed)
 	btn_backspace.pressed.connect(_remove_last_cmd)
 	robot.action_completed.connect(_on_action_completed)
+	robot.hit_wall.connect(_on_hit_wall)
 	block_manager.level_complete.connect(_on_level_complete)
 	robot.block_manager = block_manager
 
@@ -456,6 +466,11 @@ func _make_widget_from_def(block_def: Dictionary) -> RepeatIfElseBlock:
 	w.else_action      = _bval(block_def.get("else_action", "?"))
 	w.use_compound_else = block_def.get("compound_else", false)
 	w.else_action2      = _bval(block_def.get("else_action2", "?"))
+	# Attack direction overrides — "" means use current facing direction
+	w.then_attack_dir  = block_def.get("then_attack_dir",  "")
+	w.then2_attack_dir = block_def.get("then2_attack_dir", "")
+	w.else_attack_dir  = block_def.get("else_attack_dir",  "")
+	w.else2_attack_dir = block_def.get("else2_attack_dir", "")
 	return w
 
 func _bval(val: Variant) -> Variant:
@@ -474,6 +489,7 @@ func _on_run_pressed() -> void:
 	run_button.disabled   = true
 
 	if _is_if_else_mode:
+		_hit_wall = false
 		_execute_if_else_program()
 	else:
 		if command_blocks.is_empty():
@@ -492,16 +508,24 @@ func _execute_if_else_program() -> void:
 	robot.set_meta("level_done", false)
 
 	for cb in cbs:
-		if _level_complete: break
+		if _level_complete or _hit_wall: break
 		await cb.execute(robot)
+		if _hit_wall: break
 		await get_tree().create_timer(0.2).timeout
 
 	for cb in cbs: cb.queue_free()
 
-	if not _level_complete:
+	if _hit_wall:
+		_on_hit_wall_failure()
+	elif not _level_complete:
 		_on_program_finished_if_else()
 	else:
 		is_executing = false
+
+func _on_hit_wall_failure() -> void:
+	# Overlay was already shown by _on_hit_wall — nothing to do here.
+	# The retry button in the overlay handles the reset.
+	pass
 
 func _on_program_finished_if_else() -> void:
 	is_executing = false
@@ -530,6 +554,84 @@ func _execute_next() -> void:
 
 func _on_action_completed() -> void:
 	pass
+
+func _on_hit_wall() -> void:
+	# Only matters during Phase 2 execution
+	if not _is_if_else_mode: return
+	if not is_executing: return
+	if _hit_wall: return   # already handling it
+	_hit_wall    = true
+	is_executing = false
+	run_button.disabled = true
+	# Show overlay immediately — don't wait for the loop to finish
+	_show_wall_hit_overlay()
+
+func _show_wall_hit_overlay() -> void:
+	# Dim panel
+	var dim := ColorRect.new()
+	dim.name = "WallHitDim"
+	dim.color = Color(0, 0, 0, 0.55)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	$UI.add_child(dim)
+
+	# Popup panel
+	var panel := PanelContainer.new()
+	panel.name = "WallHitPanel"
+	panel.anchor_left   = 0.5; panel.anchor_right  = 0.5
+	panel.anchor_top    = 0.5; panel.anchor_bottom = 0.5
+	panel.offset_left   = -260.0; panel.offset_right  = 260.0
+	panel.offset_top    = -100.0; panel.offset_bottom = 100.0
+	var style := StyleBoxFlat.new()
+	style.bg_color     = Color(0.10, 0.06, 0.06, 1.0)
+	style.border_color = Color(0.85, 0.15, 0.15, 1.0)
+	for side in ["left","right","top","bottom"]:
+		style.set("border_width_" + side, 3)
+	style.corner_radius_top_left    = 8; style.corner_radius_top_right    = 8
+	style.corner_radius_bottom_left = 8; style.corner_radius_bottom_right = 8
+	panel.add_theme_stylebox_override("panel", style)
+	$UI.add_child(panel)
+
+	var margin := MarginContainer.new()
+	for side in ["left","right","top","bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 20)
+	panel.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 14)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(vbox)
+
+	var title := Label.new()
+	title.text = "🚧  Hit a Wall!"
+	title.add_theme_font_size_override("font_size", 22)
+	title.add_theme_color_override("font_color", Color(1.0, 0.3, 0.3))
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	vbox.add_child(title)
+
+	var msg := Label.new()
+	msg.text = "The robot overshot and hit a wall.\nCount your steps more carefully and try again."
+	msg.add_theme_font_size_override("font_size", 15)
+	msg.add_theme_color_override("font_color", Color(0.88, 0.88, 0.88))
+	msg.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	msg.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(msg)
+
+	var retry_btn := Button.new()
+	retry_btn.text = "↺  Retry"
+	retry_btn.add_theme_font_size_override("font_size", 16)
+	retry_btn.custom_minimum_size = Vector2(140, 44)
+	retry_btn.pressed.connect(func():
+		dim.queue_free()
+		panel.queue_free()
+		_hit_wall = false
+		var data : LevelData = load(levels[current_level_index]) as LevelData
+		block_manager.load_level(data)
+		robot.reset_to(data.player_start)
+		robot.set_meta("level_done", false)
+		_level_complete = false
+		run_button.disabled = false
+	)
+	vbox.add_child(retry_btn)
 
 func _on_program_finished() -> void:
 	is_executing = false

@@ -33,13 +33,20 @@ var check_direction2        : String = "UP"
 var check_condition2        : String = "is_free"
 
 # ── Compound then-action (&&) ─────────────────────────────────────────────────
-# When use_compound_then = true, then_action AND then_action2 both execute
 var use_compound_then  : bool        = false
 var then_action2       : CommandType = CommandType.ATTACK
 
 # When use_compound_else = true, else_action AND else_action2 both execute
 var use_compound_else  : bool        = false
 var else_action2       : CommandType = CommandType.ATTACK
+
+# ── Directional attack overrides (for REPEAT-IF-ELSE) ─────────────────────────
+# When set, ATTACK faces this direction before striking instead of using facing_dir.
+# "" means use current facing_dir (default behaviour).
+var then_attack_dir   : String = ""   # direction for then_action if it is ATTACK
+var then2_attack_dir  : String = ""   # direction for then_action2 if it is ATTACK
+var else_attack_dir   : String = ""   # direction for else_action if it is ATTACK
+var else2_attack_dir  : String = ""   # direction for else_action2 if it is ATTACK
 
 func _init(cmd_type: CommandType = CommandType.MOVE_UP) -> void:
 	command_type        = cmd_type
@@ -102,17 +109,23 @@ func _execute_repeat_if_else(robot: Robot) -> void:
 		var condition_met : bool = _evaluate_condition(robot)
 
 		if condition_met:
-			await _run_one_step(robot, then_action)
+			await _run_one_step(robot, then_action, then_attack_dir)
+			if robot.get_meta("hit_wall_abort", false): break
 			if use_compound_then:
-				await _run_one_step(robot, then_action2)
+				await _run_one_step(robot, then_action2, then2_attack_dir)
+				if robot.get_meta("hit_wall_abort", false): break
 		else:
-			await _run_one_step(robot, else_action)
+			await _run_one_step(robot, else_action, else_attack_dir)
+			if robot.get_meta("hit_wall_abort", false): break
 			if use_compound_else:
-				await _run_one_step(robot, else_action2)
+				await _run_one_step(robot, else_action2, else2_attack_dir)
+				if robot.get_meta("hit_wall_abort", false): break
 
 		await robot.get_tree().create_timer(0.12).timeout
 
 		if robot.get_meta("level_done", false):
+			break
+		if robot.get_meta("hit_wall_abort", false):
 			break
 
 func _evaluate_condition(robot: Robot) -> bool:
@@ -141,13 +154,25 @@ func _evaluate_condition(robot: Robot) -> bool:
 
 	return cond1 and cond2
 
-func _run_one_step(robot: Robot, t: CommandType) -> void:
+func _run_one_step(robot: Robot, t: CommandType, atk_dir: String = "") -> void:
 	match t:
 		CommandType.MOVE_UP:    await robot.move_one_up()
 		CommandType.MOVE_DOWN:  await robot.move_one_down()
 		CommandType.MOVE_LEFT:  await robot.move_one_left()
 		CommandType.MOVE_RIGHT: await robot.move_one_right()
-		CommandType.ATTACK:     await robot.attack_silent()
+		CommandType.ATTACK:
+			if atk_dir != "":
+				await robot.attack_silent_dir(_str_to_direction(atk_dir))
+			else:
+				await robot.attack_silent()
+
+func _str_to_direction(dir: String) -> Robot.Direction:
+	match dir:
+		"UP":    return Robot.Direction.UP
+		"DOWN":  return Robot.Direction.DOWN
+		"LEFT":  return Robot.Direction.LEFT
+		"RIGHT": return Robot.Direction.RIGHT
+	return Robot.Direction.RIGHT
 
 func _dir_string_to_offset(dir: String) -> Vector2i:
 	match dir:

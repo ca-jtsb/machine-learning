@@ -2,6 +2,7 @@ extends CharacterBody2D
 class_name Robot
 
 signal action_completed
+signal hit_wall   # emitted when robot tries to move into a wall during Phase 2 stepping
 
 const TILE_SIZE  : int   = 88
 const MOVE_SPEED : float = 6.0
@@ -69,6 +70,10 @@ func move_down_silent()  -> void: await _slide(Direction.DOWN)
 func move_left_silent()  -> void: await _slide(Direction.LEFT)
 func move_right_silent() -> void: await _slide(Direction.RIGHT)
 func attack_silent()     -> void: await _do_attack()
+func attack_silent_dir(dir: Direction) -> void:
+	facing_dir = dir
+	_update_dir_indicator()
+	await _do_attack()
 
 # ── Per-cell movement (used inside REPEAT-IF-ELSE blocks) ─────────────────────
 # Moves exactly ONE tile in the given direction. If blocked, stays put.
@@ -83,7 +88,9 @@ func _step_one(dir: Direction) -> void:
 	_update_dir_indicator()
 	var next : Vector2i = grid_position + _dir_to_offset(dir)
 	if _is_blocked(next):
-		return  # blocked — stay put, no movement animation
+		set_meta("hit_wall_abort", true)
+		hit_wall.emit()   # signal main.gd to fail the run
+		return
 	grid_position   = next
 	target_position = grid_to_world(grid_position)
 	is_moving       = true
@@ -97,6 +104,7 @@ func sense_cell(cell: Vector2i) -> bool:
 	return not _is_blocked(cell)
 
 func reset_to(cell: Vector2i) -> void:
+	set_meta("hit_wall_abort", false)
 	grid_position   = cell
 	position        = grid_to_world(cell)
 	target_position = position
