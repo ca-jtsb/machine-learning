@@ -12,6 +12,25 @@ enum CommandType {
 	REPEAT_IF_ELSE,
 }
 
+# ══════════════════════════════════════════════════════════════════════════════
+# COMMAND BLOCK ASSETS
+# ══════════════════════════════════════════════════════════════════════════════
+const CMD_ASSETS : Dictionary = {
+	CommandType.MOVE_UP:    { "texture_path": "", "icon_size": Vector2(32, 32), "icon_align": "left" },
+	CommandType.MOVE_DOWN:  { "texture_path": "", "icon_size": Vector2(32, 32), "icon_align": "left" },
+	CommandType.MOVE_LEFT:  { "texture_path": "", "icon_size": Vector2(32, 32), "icon_align": "left" },
+	CommandType.MOVE_RIGHT: { "texture_path": "", "icon_size": Vector2(32, 32), "icon_align": "left" },
+	CommandType.ATTACK:     { "texture_path": "", "icon_size": Vector2(32, 32), "icon_align": "left" },
+	CommandType.LOOP:       { "texture_path": "", "icon_size": Vector2(32, 32), "icon_align": "left" },
+	CommandType.APPEND:     { "texture_path": "", "icon_size": Vector2(32, 32), "icon_align": "left" },
+}
+
+# ── Colors ─────────────────────────────────────────────────────────────────────
+const COLOR_NORMAL  : Color = Color(0.95, 0.55, 0.05, 0.85)   # Orange (semi-transparent)
+const COLOR_HIGHLIGHT : Color = Color(1.0, 0.85, 0.0, 1.0)    # Bright yellow-gold
+const COLOR_TEXT_NORMAL : Color = Color.WHITE
+const COLOR_TEXT_HIGHLIGHT : Color = Color(0.15, 0.15, 0.15, 1.0)  # Dark text on bright bg
+
 # ── Basic block data ───────────────────────────────────────────────────────────
 var command_type  : CommandType = CommandType.MOVE_UP
 var loop_action   : CommandType = CommandType.MOVE_UP
@@ -26,8 +45,6 @@ var then_action     : CommandType = CommandType.MOVE_LEFT
 var else_action     : CommandType = CommandType.MOVE_UP
 
 # ── Compound condition (&&) ────────────────────────────────────────────────────
-# When use_compound_condition = true, the IF check becomes:
-#   (check_direction == check_condition) && (check_direction2 == check_condition2)
 var use_compound_condition  : bool   = false
 var check_direction2        : String = "UP"
 var check_condition2        : String = "is_free"
@@ -36,52 +53,145 @@ var check_condition2        : String = "is_free"
 var use_compound_then  : bool        = false
 var then_action2       : CommandType = CommandType.ATTACK
 
-# When use_compound_else = true, else_action AND else_action2 both execute
+# ── Compound else-action (&&) ─────────────────────────────────────────────────
 var use_compound_else  : bool        = false
 var else_action2       : CommandType = CommandType.ATTACK
 
 # ── Directional attack overrides (for REPEAT-IF-ELSE) ─────────────────────────
-# When set, ATTACK faces this direction before striking instead of using facing_dir.
-# "" means use current facing_dir (default behaviour).
-var then_attack_dir   : String = ""   # direction for then_action if it is ATTACK
-var then2_attack_dir  : String = ""   # direction for then_action2 if it is ATTACK
-var else_attack_dir   : String = ""   # direction for else_action if it is ATTACK
-var else2_attack_dir  : String = ""   # direction for else_action2 if it is ATTACK
+var then_attack_dir   : String = ""
+var then2_attack_dir  : String = ""
+var else_attack_dir   : String = ""
+var else2_attack_dir  : String = ""
+
+# ── Internal state ─────────────────────────────────────────────────────────────
+var _base_style : StyleBoxFlat = null
+var _is_highlighted : bool = false
 
 func _init(cmd_type: CommandType = CommandType.MOVE_UP) -> void:
-	command_type              = cmd_type
-	custom_minimum_size       = Vector2(0, 44)
-	size_flags_horizontal     = Control.SIZE_EXPAND_FILL
+	command_type          = cmd_type
+	custom_minimum_size   = Vector2(0, 44)
+	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 func _ready() -> void:
 	_update_label()
-	add_theme_color_override("font_color", Color.WHITE)
-	add_theme_font_size_override("font_size", 16)
+	GameConfig.apply(self, GameConfig.FONT_SIZE_NORMAL)
 
 func _update_label() -> void:
-	# Style as an orange row matching the command palette aesthetic
-	var sty := StyleBoxFlat.new()
-	sty.bg_color = Color(0.95, 0.55, 0.05, 1.0)
+	_base_style = StyleBoxFlat.new()
+	_base_style.bg_color = COLOR_NORMAL
 	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
-		sty.set("corner_radius_" + corner, 5)
-	add_theme_stylebox_override("normal",  sty)
-	add_theme_stylebox_override("hover",   sty)
-	add_theme_stylebox_override("pressed", sty)
-	add_theme_stylebox_override("focus",   sty)
-	add_theme_color_override("font_color", Color.WHITE)
+		_base_style.set("corner_radius_" + corner, 5)
+	
+	# Add subtle border for definition
+	_base_style.border_width_left = 2
+	_base_style.border_width_right = 2
+	_base_style.border_width_top = 2
+	_base_style.border_width_bottom = 2
+	_base_style.border_color = Color(0.5, 0.25, 0.0, 1.0)
+	
+	add_theme_stylebox_override("normal",  _base_style.duplicate())
+	add_theme_stylebox_override("hover",   _base_style.duplicate())
+	add_theme_stylebox_override("pressed", _base_style.duplicate())
+	add_theme_stylebox_override("focus",   _base_style.duplicate())
+	add_theme_color_override("font_color", COLOR_TEXT_NORMAL)
 
 	match command_type:
-		CommandType.MOVE_UP:    text = "↑  Move Up"
-		CommandType.MOVE_DOWN:  text = "↓  Move Down"
-		CommandType.MOVE_LEFT:  text = "←  Move Left"
-		CommandType.MOVE_RIGHT: text = "→  Move Right"
-		CommandType.ATTACK:     text = "⚔  Attack"
-		CommandType.LOOP:
-			text = "↺  Loop  %s  ×3" % _symbol(loop_action)
-		CommandType.APPEND:
-			text = "%s  &&  %s" % [_symbol(first_action), _symbol(second_action)]
-		CommandType.REPEAT_IF_ELSE:
-			text = "↺  If-Else"
+		CommandType.MOVE_UP:        text = "↑  Move Up"
+		CommandType.MOVE_DOWN:      text = "↓  Move Down"
+		CommandType.MOVE_LEFT:      text = "←  Move Left"
+		CommandType.MOVE_RIGHT:     text = "→  Move Right"
+		CommandType.ATTACK:         text = "⚔  Attack"
+		CommandType.LOOP:           text = "↺  Loop  %s  ×3" % _symbol(loop_action)
+		CommandType.APPEND:         text = "%s  &&  %s" % [_symbol(first_action), _symbol(second_action)]
+		CommandType.REPEAT_IF_ELSE: text = "↺  If-Else"
+
+	var old_icon = get_node_or_null("CmdIcon")
+	if old_icon:
+		old_icon.queue_free()
+
+	var cfg : Dictionary = CMD_ASSETS.get(command_type, {})
+	var tex_path : String = cfg.get("texture_path", "")
+	if tex_path == "" or not ResourceLoader.exists(tex_path):
+		return
+
+	var icon_size  : Vector2 = cfg.get("icon_size",  Vector2(32, 32))
+	var icon_align : String  = cfg.get("icon_align", "left")
+
+	add_theme_color_override("font_color", Color(0, 0, 0, 0))
+
+	var tex_rect := TextureRect.new()
+	tex_rect.name                = "CmdIcon"
+	tex_rect.texture             = load(tex_path)
+	tex_rect.expand_mode         = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.stretch_mode        = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.custom_minimum_size = icon_size
+	tex_rect.size                = icon_size
+	tex_rect.mouse_filter        = Control.MOUSE_FILTER_IGNORE
+
+	match icon_align:
+		"left":
+			tex_rect.set_anchors_and_offsets_preset(Control.PRESET_CENTER_LEFT)
+			tex_rect.offset_top    = -icon_size.y * 0.5
+			tex_rect.offset_bottom =  icon_size.y * 0.5
+			tex_rect.offset_left   = 8.0
+			tex_rect.offset_right  = 8.0 + icon_size.x
+		"center":
+			tex_rect.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+			tex_rect.offset_left   = -icon_size.x * 0.5
+			tex_rect.offset_right  =  icon_size.x * 0.5
+			tex_rect.offset_top    = -icon_size.y * 0.5
+			tex_rect.offset_bottom =  icon_size.y * 0.5
+		"right":
+			tex_rect.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
+			tex_rect.offset_top    = -icon_size.y * 0.5
+			tex_rect.offset_bottom =  icon_size.y * 0.5
+			tex_rect.offset_left   = -(8.0 + icon_size.x)
+			tex_rect.offset_right  = -8.0
+
+	add_child(tex_rect)
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ⭐ NEW: Highlight function - call this when executing this block
+# ══════════════════════════════════════════════════════════════════════════════
+func set_highlighted(is_active: bool) -> void:
+	_is_highlighted = is_active
+	
+	var highlight_style := _base_style.duplicate() if _base_style else StyleBoxFlat.new()
+	
+	if is_active:
+		# Bright yellow-gold background
+		highlight_style.bg_color = COLOR_HIGHLIGHT
+		# Thicker, brighter border for glow effect
+		highlight_style.border_width_left = 3
+		highlight_style.border_width_right = 3
+		highlight_style.border_width_top = 3
+		highlight_style.border_width_bottom = 3
+		highlight_style.border_color = Color(1.0, 0.9, 0.3, 1.0)
+		# Dark text for contrast on bright background
+		add_theme_color_override("font_color", COLOR_TEXT_HIGHLIGHT)
+		# Make icon visible if it exists
+		var icon = get_node_or_null("CmdIcon")
+		if icon:
+			icon.modulate = Color(0.2, 0.2, 0.2, 1.0)  # Darken icon
+	else:
+		# Restore normal orange
+		highlight_style.bg_color = COLOR_NORMAL
+		highlight_style.border_width_left = 2
+		highlight_style.border_width_right = 2
+		highlight_style.border_width_top = 2
+		highlight_style.border_width_bottom = 2
+		highlight_style.border_color = Color(0.5, 0.25, 0.0, 1.0)
+		# White text
+		add_theme_color_override("font_color", COLOR_TEXT_NORMAL)
+		# Restore icon
+		var icon = get_node_or_null("CmdIcon")
+		if icon:
+			icon.modulate = Color.WHITE
+	
+	add_theme_stylebox_override("normal",  highlight_style)
+	add_theme_stylebox_override("hover",   highlight_style)
+	add_theme_stylebox_override("pressed", highlight_style)
+	add_theme_stylebox_override("focus",   highlight_style)
 
 func _symbol(t: CommandType) -> String:
 	match t:
@@ -92,7 +202,7 @@ func _symbol(t: CommandType) -> String:
 		CommandType.ATTACK:     return "⚔"
 	return "?"
 
-# ── Execution ──────────────────────────────────────────────────────────────────
+# ── Execution ─────────────────────────────────────────────────────────────────
 func execute(robot: Robot) -> void:
 	match command_type:
 		CommandType.MOVE_UP:    await robot.move_up()
@@ -138,28 +248,26 @@ func _execute_repeat_if_else(robot: Robot) -> void:
 			break
 
 func _evaluate_condition(robot: Robot) -> bool:
-	# Primary condition
 	var dir1_offset := _dir_string_to_offset(check_direction)
 	var sense1_cell := robot.grid_position + dir1_offset
-	var sense1       := robot.sense_cell(sense1_cell)  # true = free
+	var sense1       := robot.sense_cell(sense1_cell)
 	var cond1 : bool
 	match check_condition:
-		"is_free":        cond1 = sense1
-		"is_obstacle":    cond1 = not sense1
-		_:                cond1 = sense1
+		"is_free":     cond1 = sense1
+		"is_obstacle": cond1 = not sense1
+		_:             cond1 = sense1
 
 	if not use_compound_condition:
 		return cond1
 
-	# Compound: both conditions must be true (&&)
 	var dir2_offset := _dir_string_to_offset(check_direction2)
 	var sense2_cell := robot.grid_position + dir2_offset
 	var sense2       := robot.sense_cell(sense2_cell)
 	var cond2 : bool
 	match check_condition2:
-		"is_free":        cond2 = sense2
-		"is_obstacle":    cond2 = not sense2
-		_:                cond2 = sense2
+		"is_free":     cond2 = sense2
+		"is_obstacle": cond2 = not sense2
+		_:             cond2 = sense2
 
 	return cond1 and cond2
 

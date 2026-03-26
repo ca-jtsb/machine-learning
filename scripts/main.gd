@@ -22,10 +22,10 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	"res://levels/level_1.tres",
-	"res://levels/level_2.tres",
-	"res://levels/level_3.tres",
-	"res://levels/level_4.tres",
+	#"res://levels/level_1.tres",
+	#"res://levels/level_2.tres",
+	#"res://levels/level_3.tres",
+	#"res://levels/level_4.tres",
 	"res://levels/level_5.tres",
 	"res://levels/level_6.tres",
 	"res://levels/level_7.tres",
@@ -199,6 +199,31 @@ const ALT_SOLUTIONS : Dictionary = {
 	},
 }
 
+# ══════════════════════════════════════════════════════════════════════════════
+# PALETTE BUTTON ASSETS — edit here to map textures to each command button.
+#
+# Each entry: [ key, label, texture_path, hover_color ]
+#   key          — matches available_commands strings ("up","down","attack" etc.)
+#   label        — fallback text shown if texture is null or file missing
+#   texture_path — path to .png asset, or "" to use label-only orange button
+#   hover_color  — Color tint applied on hover (slightly lighter than normal)
+#
+# To assign an asset: set texture_path to e.g. "res://assets/UI/btn_move_up.png"
+# To use text-only button: leave texture_path as ""
+# ══════════════════════════════════════════════════════════════════════════════
+const PALETTE_BUTTONS : Array = [
+	# [ key,      label,          texture_path,                  hover_color (fallback only) ]
+	# Set texture_path to "res://assets/UI/yourfile.png" to use an icon asset.
+	# Leave "" to show a plain orange text button instead.
+	[ "up",      "Move Up ↑",    "res://assets/UI/UP.png",      Color(1.0, 0.70, 0.20, 1.0) ],
+	[ "down",    "Move Down ↓",  "res://assets/UI/DOWN.png",    Color(1.0, 0.70, 0.20, 1.0) ],
+	[ "left",    "Move Left ←",  "res://assets/UI/LEFT.png",    Color(1.0, 0.70, 0.20, 1.0) ],
+	[ "right",   "Move Right →", "res://assets/UI/RIGHT.png",   Color(1.0, 0.70, 0.20, 1.0) ],
+	[ "attack",  "⚔ ATTACK",     "res://assets/UI/ATTACK.png",                            Color(1.0, 0.70, 0.20, 1.0) ],
+	[ "loop",    "↺ LOOP",       "res://assets/UI/LOOP.png",                            Color(1.0, 0.70, 0.20, 1.0) ],
+	[ "append",  "&& APPEND",    "res://assets/UI/APPEND.png",                            Color(1.0, 0.70, 0.20, 1.0) ],
+]
+
 # ── State ──────────────────────────────────────────────────────────────────────
 var current_level_index   : int  = 0
 var command_blocks        : Array[CommandBlock] = []
@@ -359,7 +384,7 @@ func _build_standard_ui() -> void:
 	_bottom_palette.name          = "BottomPalette"
 	_bottom_palette.anchor_left   = 0.0; _bottom_palette.anchor_right  = 1.0
 	_bottom_palette.anchor_top    = 1.0; _bottom_palette.anchor_bottom = 1.0
-	_bottom_palette.offset_left   = 6.0; _bottom_palette.offset_right  = -336.0
+	_bottom_palette.offset_left   = 0.0; _bottom_palette.offset_right  = -336.0
 	_bottom_palette.offset_top    = -112.0; _bottom_palette.offset_bottom = 0.0
 	# Leave room at the very bottom for run/backspace buttons
 	_bottom_palette.grow_horizontal = Control.GROW_DIRECTION_BOTH
@@ -380,7 +405,7 @@ func _build_standard_ui() -> void:
 
 	var bp_hbox := HBoxContainer.new()
 	bp_hbox.add_theme_constant_override("separation", 8)
-	bp_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	bp_hbox.alignment = BoxContainer.ALIGNMENT_BEGIN
 	bp_margin.add_child(bp_hbox)
 
 	# Store hbox so _refresh_palette can rebuild buttons into it
@@ -639,16 +664,26 @@ func _on_program_finished_if_else() -> void:
 func _execute_next() -> void:
 	if current_command_index >= command_blocks.size():
 		_on_program_finished(); return
+	
 	var cmd : CommandBlock = command_blocks[current_command_index]
-	_highlight(cmd)
+	
+	# ⭐ OLD: _highlight(cmd)
+	# ⭐ NEW: Use the block's built-in highlight
+	cmd.set_highlighted(true)
+	
 	total_actions_taken += 1
 	block_manager.on_action_taken(total_actions_taken)
 	current_command_index += 1
+	
 	await cmd.execute(robot)
+	
+	# ⭐ Turn off highlight after execution
+	cmd.set_highlighted(false)
+	
 	if not is_executing: return
 	await get_tree().create_timer(0.15).timeout
 	_execute_next()
-
+	
 func _on_action_completed() -> void:
 	pass
 
@@ -732,7 +767,7 @@ func _show_wall_hit_overlay() -> void:
 
 func _on_program_finished() -> void:
 	is_executing = false
-	_clear_highlights()
+	_clear_highlights()  # Keep this for safety
 	if _level_complete: return
 	_show_failure_flash()
 	await get_tree().create_timer(1.0).timeout
@@ -745,7 +780,13 @@ func _on_program_finished() -> void:
 	run_button.disabled   = false
 	_update_counter()
 	_clear_palette_hint()
-
+	
+	# ⭐ Extra safety: clear any stuck highlights
+	for cmd in command_blocks:
+		if is_instance_valid(cmd):
+			cmd.set_highlighted(false)
+			
+			
 # ── Level complete flow ────────────────────────────────────────────────────────
 func _on_level_complete() -> void:
 	_level_complete     = true
@@ -955,60 +996,68 @@ func _make_cmd_row(block: CommandBlock) -> HBoxContainer:
 	return row
 
 # ── Drag-to-reorder ────────────────────────────────────────────────────────────
-var _drag_row        : HBoxContainer = null
-var _drag_start_y    : float         = 0.0
-var _drag_ghost      : Panel         = null   # visual ghost while dragging
+# ── Drag-to-reorder state ─────────────────────────────────────────────────────
+var _drag_row      : HBoxContainer = null
+var _drag_pressed  : bool          = false
 
-func _setup_row_drag(row: HBoxContainer, block: CommandBlock) -> void:
+# _setup_row_drag only marks which row was pressed.
+# Actual drag detection happens in _input so mouse motion is tracked globally.
+func _setup_row_drag(row: HBoxContainer, _block: CommandBlock) -> void:
 	row.gui_input.connect(func(event: InputEvent):
 		if is_executing: return
 		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
 				_drag_row     = row
-				_drag_start_y = event.global_position.y
+				_drag_pressed = true
 			else:
-				if _drag_row == row:
-					_drag_row = null
-		if event is InputEventMouseMotion and _drag_row == row:
-			_handle_drag_motion(row, event.global_position.y)
+				_drag_pressed = false
+				_drag_row     = null
 	)
 
+# Global input handler — receives mouse motion even outside the row rect
+func _input(event: InputEvent) -> void:
+	if not _drag_pressed or _drag_row == null or is_executing: return
+	if event is InputEventMouseButton and not event.pressed:
+		_drag_pressed = false
+		_drag_row     = null
+		return
+	if event is InputEventMouseMotion:
+		_handle_drag_motion(_drag_row, event.global_position.y)
+
 func _handle_drag_motion(row: HBoxContainer, global_y: float) -> void:
-	if _std_workspace == null: return
+	if _std_workspace == null or not is_instance_valid(row): return
 	var rows := _std_workspace.get_children()
 	var my_idx := rows.find(row)
 	if my_idx < 0: return
-	# Find which slot the mouse is over
-	var target_idx := my_idx
+	var target_idx := rows.size() - 1
 	for i in rows.size():
 		var r := rows[i] as Control
 		if r == null: continue
-		var mid_y := r.global_position.y + r.size.y * 0.5
-		if global_y < mid_y:
+		if global_y < r.global_position.y + r.size.y * 0.5:
 			target_idx = i
 			break
-		target_idx = i
 	if target_idx == my_idx: return
-	# Move row and matching command_block entry
 	_std_workspace.move_child(row, target_idx)
-	var block_idx := command_blocks.find(_get_row_block(row))
-	if block_idx >= 0:
-		command_blocks.erase(_get_row_block(row))
-		command_blocks.insert(target_idx, _get_row_block(row))
+	# Rebuild command_blocks to match new visual order
+	command_blocks.clear()
+	for r in _std_workspace.get_children():
+		var b := _get_row_block(r)
+		if b: command_blocks.append(b)
 	_renumber_rows()
 
-func _get_row_block(row: HBoxContainer) -> CommandBlock:
+func _get_row_block(row: Node) -> CommandBlock:
 	for child in row.get_children():
 		if child is CommandBlock: return child
 	return null
 
+# Always renumbers sequentially 1,2,3… regardless of deletion or reorder
 func _renumber_rows() -> void:
 	if _std_workspace == null: return
 	var idx := 1
 	for row in _std_workspace.get_children():
-		if row is HBoxContainer:
-			var lbl := row.get_node_or_null("LineNum")
-			if lbl: lbl.text = str(idx)
+		var lbl := row.get_node_or_null("LineNum")
+		if lbl:
+			lbl.text = str(idx)
 			idx += 1
 
 func _add_basic_cmd(cmd_type: CommandBlock.CommandType) -> void:
@@ -1040,59 +1089,135 @@ func _clear_commands() -> void:
 	_update_counter()
 
 func _refresh_palette(allowed: Array[String]) -> void:
-	# Hide the legacy left-panel buttons (they still exist in the scene but are unused)
-	btn_up.visible     = false
-	btn_down.visible   = false
-	btn_left.visible   = false
-	btn_right.visible  = false
-	btn_attack.visible = false
-	btn_loop.visible   = false
-	btn_append.visible = false
+	# Hide legacy left-panel buttons
+	for b in [btn_up,btn_down,btn_left,btn_right,btn_attack,btn_loop,btn_append]:
+		b.visible = false
 
-	# Rebuild the bottom palette buttons
 	if _bottom_palette == null: return
 	var hbox : HBoxContainer = _bottom_palette.get_meta("buttons_hbox")
 	for child in hbox.get_children(): child.queue_free()
 
-	var all_cmds := [
-		["up",     "Move Up ↑",    CommandBlock.CommandType.MOVE_UP],
-		["down",   "Move Down ↓",  CommandBlock.CommandType.MOVE_DOWN],
-		["left",   "Move Left ←",  CommandBlock.CommandType.MOVE_LEFT],
-		["right",  "Move Right →", CommandBlock.CommandType.MOVE_RIGHT],
-		["attack", "⚔ ATTACK",     CommandBlock.CommandType.ATTACK],
-		["loop",   "↺ LOOP",       null],
-		["append", "&& APPEND",    null],
-	]
+	var cmd_type_map : Dictionary = {
+		"up": CommandBlock.CommandType.MOVE_UP, "down": CommandBlock.CommandType.MOVE_DOWN,
+		"left": CommandBlock.CommandType.MOVE_LEFT, "right": CommandBlock.CommandType.MOVE_RIGHT,
+		"attack": CommandBlock.CommandType.ATTACK,
+	}
 
-	for cmd_info in all_cmds:
-		var key     : String = cmd_info[0]
-		var label   : String = cmd_info[1]
-		var cmd_type        = cmd_info[2]
+	for entry in PALETTE_BUTTONS:
+		var key          : String = entry[0]
+		var label        : String = entry[1]
+		var tex_path     : String = entry[2]
+		var hover_color  : Color  = entry[3]
 		if not (allowed.is_empty() or allowed.has(key)): continue
 
-		var btn := Button.new()
-		btn.text = label
-		btn.custom_minimum_size = Vector2(110, 60)
-		btn.add_theme_font_size_override("font_size", 14)
-		# Orange button style matching the command block colour
-		var sty := StyleBoxFlat.new()
-		sty.bg_color = Color(0.95, 0.55, 0.05, 1.0)
-		for corner in ["top_left","top_right","bottom_left","bottom_right"]:
-			sty.set("corner_radius_" + corner, 6)
-		btn.add_theme_stylebox_override("normal", sty)
-		var sty_hover := sty.duplicate()
-		sty_hover.bg_color = Color(1.0, 0.65, 0.15, 1.0)
-		btn.add_theme_stylebox_override("hover", sty_hover)
-		btn.add_theme_color_override("font_color", Color.WHITE)
+		var btn := _make_palette_btn(label, tex_path, hover_color)
 
 		if key == "loop":
 			btn.pressed.connect(_on_loop_pressed)
 		elif key == "append":
 			btn.pressed.connect(_on_append_pressed)
 		else:
-			var ct : CommandBlock.CommandType = cmd_type
+			var ct : CommandBlock.CommandType = cmd_type_map[key]
 			btn.pressed.connect(func(): _on_basic_pressed(ct))
+
 		hbox.add_child(btn)
+
+# ── Build one palette button ──────────────────────────────────────────────────
+# If a texture asset is provided: fully transparent button, icon fills it,
+# hover = icon scales up + yellow outline glow, pressed = icon scales down.
+# If no asset: orange button with text (fallback).
+func _make_palette_btn(label: String, tex_path: String, _hover_col: Color) -> Button:
+	var has_tex : bool = tex_path != "" and ResourceLoader.exists(tex_path)
+
+	var btn := Button.new()
+	btn.custom_minimum_size = Vector2(88, 88)
+	btn.focus_mode          = Control.FOCUS_NONE
+	btn.clip_contents       = false   # allow icon to expand outside on hover
+
+	# ── Fully transparent styles when using an asset ───────────────────────────
+	var sty_empty := StyleBoxEmpty.new()
+	if has_tex:
+		for state in ["normal","hover","pressed","focus","disabled"]:
+			btn.add_theme_stylebox_override(state, sty_empty)
+	else:
+		# Orange fallback styles
+		var sty := StyleBoxFlat.new()
+		sty.bg_color = Color(0.95, 0.55, 0.05, 1.0)
+		for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+			sty.set("corner_radius_" + corner, 8)
+		btn.add_theme_stylebox_override("normal", sty)
+		var sty_h := sty.duplicate(); sty_h.bg_color = Color(1.0, 0.70, 0.20)
+		btn.add_theme_stylebox_override("hover", sty_h)
+		var sty_p := sty.duplicate(); sty_p.bg_color = Color(0.70, 0.38, 0.02)
+		btn.add_theme_stylebox_override("pressed", sty_p)
+		btn.text = label
+		btn.add_theme_font_size_override("font_size", 13)
+		btn.add_theme_color_override("font_color", Color.WHITE)
+		return btn
+
+	# ── Asset icon — fills the button, centered ────────────────────────────────
+	var tex : Texture2D = load(tex_path)
+	var tex_rect := TextureRect.new()
+	tex_rect.name         = "Icon"
+	tex_rect.texture      = tex
+	tex_rect.expand_mode  = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Fill the button exactly at rest
+	tex_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	btn.add_child(tex_rect)
+
+	# ── Glow outline panel — hidden by default, shown on hover/press ──────────
+	# Uses a StyleBoxFlat border-only panel layered behind the icon.
+	var glow := Panel.new()
+	glow.name         = "Glow"
+	glow.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	glow.visible      = false
+	var glow_sty      := StyleBoxFlat.new()
+	glow_sty.bg_color       = Color(0, 0, 0, 0)   # transparent fill
+	glow_sty.border_color   = Color(1.0, 0.95, 0.3, 1.0)
+	for side in ["left","right","top","bottom"]:
+		glow_sty.set("border_width_" + side, 3)
+	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+		glow_sty.set("corner_radius_" + corner, 6)
+	glow.add_theme_stylebox_override("panel", glow_sty)
+	glow.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	btn.add_child(glow)
+
+	# ── Hover / press animation via Tween ─────────────────────────────────────
+	# We connect mouse_entered / mouse_exited on the button for scale feedback.
+	# Pressed feedback uses button_down / button_up.
+	var normal_scale  := Vector2(1.0, 1.0)
+	var hover_scale   := Vector2(1.12, 1.12)   # 12% bigger on hover
+	var pressed_scale := Vector2(0.92, 0.92)   # slightly smaller on press
+
+	# Keep pivot centred whenever the icon is resized
+	tex_rect.resized.connect(func(): tex_rect.pivot_offset = tex_rect.size * 0.5)
+
+	btn.mouse_entered.connect(func():
+		tex_rect.pivot_offset = tex_rect.size * 0.5
+		glow.visible = true
+		var tw := btn.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(tex_rect, "scale", hover_scale, 0.12)
+	)
+	btn.mouse_exited.connect(func():
+		glow.visible = false
+		var tw := btn.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(tex_rect, "scale", normal_scale, 0.10)
+	)
+	btn.button_down.connect(func():
+		var tw := btn.create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		tw.tween_property(tex_rect, "scale", pressed_scale, 0.07)
+		glow_sty.border_color = Color(1.0, 0.5, 0.1, 1.0)   # orange tint on press
+	)
+	btn.button_up.connect(func():
+		# Return to hover scale (mouse is still over the button)
+		var tw := btn.create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		tw.tween_property(tex_rect, "scale", hover_scale, 0.10)
+		glow_sty.border_color = Color(1.0, 0.95, 0.3, 1.0)   # back to yellow
+	)
+
+	return btn
 
 # ── Tutorial ───────────────────────────────────────────────────────────────────
 func _show_tutorial(level_index: int) -> void:

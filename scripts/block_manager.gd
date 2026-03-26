@@ -12,15 +12,18 @@ var _total_actions : int         = 0
 var _nodes         : Dictionary  = {}
 
 # ── Texture paths ──────────────────────────────────────────────────────────────
-const TEX_FLOOR              : String = "res://assets/Blocks/floor.png"         # ← NEW
-const TEX_EVEN_ACTIVE        : String = "res://assets/Blocks/even-block.png"
-const TEX_ODD_ACTIVE         : String = "res://assets/Blocks/odd-block.png"
+const TEX_FLOOR              : String = "res://assets/Blocks/floor.png"         
+const TEX_EVEN_INACTIVE     : String = "res://assets/Blocks/even-block-inactive.png"  
+const TEX_ODD_INACTIVE      : String = "res://assets/Blocks/odd-block-inactive.png"   
+const TEX_EVEN_ACTIVE       : String = "res://assets/Blocks/even-block.png"
+const TEX_ODD_ACTIVE        : String = "res://assets/Blocks/odd-block.png"
 const TEX_COLLAPSIBLE_INTACT : String = "res://assets/Blocks/collapsible-block.png"
 const TEX_COLLAPSIBLE_BROKEN : String = "res://assets/Blocks/collapsible-block-broken.png"
 const TEX_BUTTON_OFF         : String = "res://assets/Blocks/lock-switch-off.png"
 const TEX_BUTTON_ON          : String = "res://assets/Blocks/lock-switch-on.png"
 const TEX_WALL               : String = "res://assets/Blocks/wall.png"
 const TEX_LOCK               : String = "res://assets/Blocks/lock-off.png"
+const TEX_LOCK_OPEN          : String = "res://assets/Blocks/lock-on.png" 
 const TEX_PORTAL             : String = "res://assets/Blocks/door-closed.png"
 
 func load_level(data: LevelData) -> void:
@@ -172,21 +175,21 @@ func _spawn_even_odd(cell: Vector2i, is_even: bool) -> void:
 	bg.color = Color(0.95, 0.95, 0.95, 0.0)
 	c.add_child(bg)
 
-	var tex_path : String = TEX_EVEN_ACTIVE if is_even else TEX_ODD_ACTIVE
-	_add_sprite(c, tex_path, "BlockTexture", false)
+	# ── INACTIVE texture (shown when BLOCKED/pathway closed) ─────────────
+	var inactive_tex_path : String = TEX_EVEN_ACTIVE if is_even else TEX_ODD_ACTIVE
+	var inactive_sprite := _add_sprite(c, inactive_tex_path, "InactiveTexture", true)
+	inactive_sprite.modulate.a = 1.0  # ← Semi-transparent when blocking
 
-	var lbl           := Label.new()
-	lbl.name           = "Label"
-	lbl.text           = "" if is_even else ""
-	lbl.position       = Vector2(TILE_SIZE * 0.12, TILE_SIZE * 0.3)
-	lbl.add_theme_font_size_override("font_size", 18)
-	lbl.add_theme_color_override("font_color", Color(0.1, 0.1, 0.1))
-	c.add_child(lbl)
+	# ── ACTIVE texture (shown when OPEN/pathway passable) ─────────────────
+	var active_tex_path : String = TEX_EVEN_INACTIVE if is_even else TEX_ODD_INACTIVE
+	var active_sprite := _add_sprite(c, active_tex_path, "ActiveSprite", false)
+	active_sprite.modulate.a = 0.4    # ← Full opacity when passable
 
 	add_child(c)
 	_nodes[cell] = c
 	_refresh_eo_visual(cell, is_even, 0)
-
+	
+	
 func _spawn_button(cell: Vector2i, idx: int) -> void:
 	var c := Node2D.new()
 	c.position = _cell_pos(cell)
@@ -203,11 +206,14 @@ func _spawn_lock(cell: Vector2i, idx: int) -> void:
 	c.position = _cell_pos(cell)
 	c.name     = "LOCK_%d" % idx
 
-	_add_sprite(c, TEX_LOCK, "Tex")
+	# Locked state (visible by default)
+	_add_sprite(c, TEX_LOCK, "TexLocked", true)
+	
+	# Unlocked/Open state (hidden by default) ← ADD THESE 3 LINES
+	_add_sprite(c, TEX_LOCK_OPEN, "TexUnlocked", false)
 
 	add_child(c)
 	_nodes[cell] = c
-
 # ── Public API ─────────────────────────────────────────────────────────────────
 func is_blocked(cell: Vector2i) -> bool:
 	if _data == null: return false
@@ -219,16 +225,49 @@ func is_blocked(cell: Vector2i) -> bool:
 	if _data.odd_cells.has(cell)  and _total_actions % 2 == 0: return true
 	return false
 
+func _show_activation_effect(cell: Vector2i, is_even: bool) -> void:
+	if not _nodes.has(cell): return
+	
+	var container : Node2D = _nodes[cell]
+	
+	# Create flash effect
+	var flash := ColorRect.new()
+	flash.name = "ActivationFlash"
+	flash.size = Vector2(TILE_SIZE, TILE_SIZE)
+	flash.color = Color(0.3, 0.9, 0.3, 0.7) if is_even else Color(0.9, 0.3, 0.9, 0.7)
+	flash.z_index = 5
+	container.add_child(flash)
+	
+	# Add "EVEN!" or "ODD!" label
+	var lbl := Label.new()
+	lbl.text = "EVEN!" if is_even else "ODD!"
+	lbl.position = Vector2(TILE_SIZE * 0.15, TILE_SIZE * 0.25)
+	lbl.add_theme_font_size_override("font_size", 22)
+	lbl.add_theme_color_override("font_color", Color.WHITE)
+	lbl.z_index = 6
+	container.add_child(lbl)
+	
+	# Fade out and remove after 0.5 seconds
+	await get_tree().create_timer(0.5).timeout
+	var tween = create_tween()
+	tween.tween_property(flash, "color:a", 0.0, 0.3)
+	tween.tween_property(lbl, "modulate:a", 0.0, 0.3)
+	await tween.finished
+	
+	flash.queue_free()
+	lbl.queue_free()
+
 func on_robot_enter(cell: Vector2i) -> bool:
 	if _data == null: return false
 	if _data.portal_cell == cell:
 		emit_signal("level_complete")
 		return true
+	
 	var btn_idx : int = _data.button_cells.find(cell)
 	if btn_idx != -1:
 		_activate_button(btn_idx)
 	return false
-
+	
 func on_action_taken(total: int) -> void:
 	_total_actions = total
 	for cell in _data.even_cells: _refresh_eo_visual(cell, true,  total)
@@ -260,12 +299,20 @@ func on_robot_attack(facing_cell: Vector2i) -> void:
 
 func _refresh_eo_visual(cell: Vector2i, is_even: bool, total: int) -> void:
 	if not _nodes.has(cell): return
+	
+	# is_open = true means pathway is PASSABLE (block is "inactive" in your terms)
 	var is_open   : bool   = (is_even and total % 2 == 0) or (not is_even and total % 2 != 0)
 	var container : Node2D = _nodes[cell]
-	var tex                = container.get_node_or_null("BlockTexture")
-	if tex:
-		tex.visible = not is_open
-
+	
+	var tex_inactive = container.get_node_or_null("InactiveTexture")
+	var tex_active   = container.get_node_or_null("ActiveSprite")
+	
+	if tex_inactive:
+		tex_inactive.visible = not is_open  # Show when BLOCKED (semi-transparent)
+	if tex_active:
+		tex_active.visible = is_open        # Show when OPEN (full opacity + glow)
+		
+	
 func _activate_button(btn_idx: int) -> void:
 	if btn_idx >= _data.lock_cells.size(): return
 	_locks_open[btn_idx] = true
@@ -278,5 +325,9 @@ func _activate_button(btn_idx: int) -> void:
 
 	var lock_cell : Vector2i = _data.lock_cells[btn_idx]
 	if _nodes.has(lock_cell):
-		_nodes[lock_cell].queue_free()
-		_nodes.erase(lock_cell)
+		var lock_node : Node2D = _nodes[lock_cell]
+		var tex_locked   = lock_node.get_node_or_null("TexLocked")    # ← ADD THESE 4 LINES
+		var tex_unlocked = lock_node.get_node_or_null("TexUnlocked")
+		if tex_locked:   tex_locked.visible   = false
+		if tex_unlocked: tex_unlocked.visible = true
+		# ← REMOVED: .queue_free() and .erase() so the open lock stays visible
