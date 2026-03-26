@@ -22,10 +22,10 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	#"res://levels/level_1.tres",
-	#"res://levels/level_2.tres",
-	#"res://levels/level_3.tres",
-	#"res://levels/level_4.tres",
+	"res://levels/level_1.tres",
+	"res://levels/level_2.tres",
+	"res://levels/level_3.tres",
+	"res://levels/level_4.tres",
 	"res://levels/level_5.tres",
 	"res://levels/level_6.tres",
 	"res://levels/level_7.tres",
@@ -533,7 +533,7 @@ func _enter_standard_mode(data: LevelData) -> void:
 	# Show Phase 1 new elements
 	if _std_panel:      _std_panel.visible      = true
 	if _bottom_palette: _bottom_palette.visible = true
-	$UI/BackspaceButton.visible    = true
+	$UI/BackspaceButton.visible    = false
 	$UI/RunButton.visible          = true
 	$UI/ActionCounterPanel.visible = true
 
@@ -549,7 +549,7 @@ func _enter_if_else_mode(data: LevelData) -> void:
 	if _bottom_palette: _bottom_palette.visible = false
 
 	# Show Phase 2 elements
-	$UI/BackspaceButton.visible    = true
+	$UI/BackspaceButton.visible    = false
 	$UI/RunButton.visible          = true
 	$UI/ActionCounterPanel.visible = false
 	if _if_else_panel: _if_else_panel.visible = true
@@ -1540,7 +1540,7 @@ func _update_action_button_visuals() -> void:
 				child.add_theme_stylebox_override("hover", sty_hover)
 				child.add_theme_stylebox_override("pressed", sty)
 			else:
-				# Restore original orange OUTLINE style (transparent fill)
+				# Restore original style (transparent fill)
 				var sty := StyleBoxFlat.new()
 				sty.bg_color = Color(0, 0, 0, 0)  # ← Transparent (no fill)
 				sty.border_color = Color(0, 0, 0, 0)  # Orange border

@@ -131,10 +131,10 @@ func _spawn_wall(cell: Vector2i) -> void:
 func _spawn_portal(cell: Vector2i) -> void:
 	var c := _make_base_node(cell, "PORTAL_%d_%d" % [cell.x, cell.y])
 	_add_sprite(c, TEX_PORTAL, "Tex")
-	var lbl      := Label.new()
-	lbl.text      = "EXIT"
-	lbl.position  = Vector2(TILE_SIZE * 0.18, TILE_SIZE * 0.35)
-	lbl.add_theme_font_size_override("font_size", 16)
+	var lbl := Label.new()
+	lbl.text = "EXIT"
+	lbl.position = Vector2(TILE_SIZE * 0.18, TILE_SIZE * 0.35)
+	GameConfig.apply(lbl, 16)  
 	lbl.add_theme_color_override("font_color", Color.WHITE)
 	c.add_child(lbl)
 

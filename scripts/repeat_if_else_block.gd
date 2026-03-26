@@ -105,6 +105,7 @@ func _build_ui() -> void:
 	_repeat_spin.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	_repeat_spin.editable  = not repeat_fixed
 	_repeat_spin.suffix    = "×"
+	GameConfig.apply(_repeat_spin.get_line_edit(), 11)  # ← ADD THIS LINE
 	_repeat_spin.value_changed.connect(func(_v): changed.emit())
 	_repeat_spin.get_line_edit().text_submitted.connect(_on_repeat_text_submitted)
 	_repeat_spin.get_line_edit().focus_exited.connect(_on_repeat_focus_exited)
@@ -303,7 +304,7 @@ func _lbl(parent: Node, text: String, font_sz: int, color: Color, bold: bool = f
 	var l := Label.new()
 	l.text = text
 	l.add_theme_color_override("font_color", color)
-	l.add_theme_font_size_override("font_size", font_sz)
+	GameConfig.apply(l, font_sz)  
 	if bold:
 		pass  # bold via theme not easily set at runtime; kept for future
 	parent.add_child(l)
@@ -312,14 +313,14 @@ func _make_val_label(text: String) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.add_theme_color_override("font_color", COLOR_VAL)
-	l.add_theme_font_size_override("font_size", 12)
+	GameConfig.apply(l, 11)  # ← CHANGE: use GameConfig.apply instead of just font_size
 	return l
 
 func _make_dropdown(options: Array[String]) -> OptionButton:
 	var ob := OptionButton.new()
 	ob.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	ob.custom_minimum_size = Vector2(0, 26)
-	ob.add_theme_font_size_override("font_size", 12)
+	GameConfig.apply(ob, 11)  
 	for opt in options:
 		ob.add_item(opt)
 	return ob
