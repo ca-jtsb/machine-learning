@@ -22,12 +22,12 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	#"res://levels/level_1.tres",
-	#"res://levels/level_2.tres",
-	#"res://levels/level_3.tres",
-	#"res://levels/level_4.tres",
-	#"res://levels/level_5.tres",
-	#"res://levels/level_6.tres",
+	"res://levels/level_1.tres",
+	"res://levels/level_2.tres",
+	"res://levels/level_3.tres",
+	"res://levels/level_4.tres",
+	"res://levels/level_5.tres",
+	"res://levels/level_6.tres",
 	"res://levels/level_7.tres",
 	"res://levels/level_8.tres",
 	"res://levels/level_9.tres",
