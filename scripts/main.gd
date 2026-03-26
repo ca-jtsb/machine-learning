@@ -6,7 +6,7 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 # ── Scene references ───────────────────────────────────────────────────────────
 @onready var robot         : Robot         = $GameWorld/Robot
 @onready var block_manager : BlockManager  = $GameWorld/BlockManager
-@onready var workspace     : HBoxContainer = $UI/WorkspacePanel/Workspace
+@onready var workspace     : VBoxContainer = $UI/WorkspacePanel/Workspace
 @onready var run_button    : Button        = $UI/RunButton
 @onready var count_label   : Label         = $UI/ActionCounterPanel/VBoxContainer/CountLabel
 @onready var title_label   : Label         = $UI/ActionCounterPanel/VBoxContainer/TitleLabel
@@ -41,24 +41,24 @@ const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
 # compound_condition / compound_then / compound_else keys enable && in those slots.
 const BLUEPRINTS : Dictionary = {
 	"Level 7 - The Algorithm": [
-		{ "repeat_count": 1,  "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
-		{ "repeat_count": 1, "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
+		{ "repeat_count": 6,  "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
+		{ "repeat_count": 12, "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
 	],
 	"Level 8": [
-		{ "repeat_count": 1, "check_direction": "RIGHT", "check_condition": "is_obstacle", "then_action": "attack", "else_action": "move_right" },
+		{ "repeat_count": 35, "check_direction": "RIGHT", "check_condition": "is_obstacle", "then_action": "attack", "else_action": "move_right" },
 	],
 
 	# ── Level 9: ALL blank — player fills direction, condition, and actions ──────
 	"Level 9": [
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
+			"repeat_count": 8,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
+			"repeat_count": 4,
+			"check_direction": "UP", "check_condition": "is_free",
 			"then_action": "?",
 			"else_action": "?"
 		},
@@ -67,7 +67,7 @@ const BLUEPRINTS : Dictionary = {
 	# ── Level 9 ALT: introduced after solving, shows && condition ──────────────
 	"Level 9 - Alt": [
 		{
-			"repeat_count": 1,
+			"repeat_count": 11,
 			"check_direction": "RIGHT", "check_condition": "is_obstacle",
 			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
 			"then_action": "move_up",
@@ -79,21 +79,21 @@ const BLUEPRINTS : Dictionary = {
 	# ── Level 10: player fills blank slots ─────────────────────────────────────
 	"Level 10": [
 		{
-			"repeat_count": 1,
+			"repeat_count": 7,
 			"check_direction": "RIGHT", "check_condition": "is_free",
 			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 1,
+			"repeat_count": 8,
 			"check_direction": "RIGHT", "check_condition": "is_obstacle",
 			"then_action": "attack", "then_attack_dir": "RIGHT",
 			"compound_then": true, "then_action2": "move_right",
 			"else_action": "move_right"
 		},
 		{
-			"repeat_count": 1,
+			"repeat_count": 5,
 			"check_direction": "DOWN", "check_condition": "is_free",
 			"then_action": "move_down",
 			"else_action": "move_left"
@@ -105,49 +105,50 @@ const BLUEPRINTS : Dictionary = {
 	# If your .tres uses "Level 10", the entry above handles it. Keep both.
 	"Final Level": [
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
+			"repeat_count": 3,
+			"check_direction": "RIGHT", "check_condition": "is_free",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
+			"repeat_count": 4,
+			"check_direction": "UP", "check_condition": "is_free",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
+			"repeat_count": 10,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
+			"repeat_count": 6,
+			"check_direction": "DOWN", "check_condition": "is_free",
 			"then_action": "?",
 			"else_action": "?"
 		},
 	],
 	"Final Level - Alt": [
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
-			"compound_condition": true, "check_direction2": "?", "check_condition2": "?",
-			"then_action": "?",
-			"else_action": "?"
+			"repeat_count": 7,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
+			"then_action": "move_up",
+			"else_action": "move_right"
 		},
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
-			"then_action": "?", "then_attack_dir": "?",
-			"else_action": "?"
+			"repeat_count": 8,
+			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"then_action": "attack", "then_attack_dir": "RIGHT",
+			"compound_then": true, "then_action2": "move_right",
+			"else_action": "move_right"
 		},
 		{
-			"repeat_count": 1,
-			"check_direction": "?", "check_condition": "?",
-			"then_action": "?",
-			"else_action": "?"
+			"repeat_count": 5,
+			"check_direction": "DOWN", "check_condition": "is_free",
+			"then_action": "move_down",
+			"else_action": "move_left"
 		},
 	],
 
@@ -218,6 +219,11 @@ var _if_else_workspace : VBoxContainer   = null
 var _if_else_scroll    : ScrollContainer = null
 var _if_else_panel     : PanelContainer  = null
 
+# Phase 1 UI — built once, shown only in standard mode
+var _std_panel         : PanelContainer  = null   # right panel showing placed commands
+var _std_workspace     : VBoxContainer   = null   # VBox inside right panel
+var _bottom_palette    : PanelContainer  = null   # bottom orange command button panel
+
 # ── Pending modifier state ─────────────────────────────────────────────────────
 enum PendingMode { NONE, LOOP, APPEND_FIRST, APPEND_SECOND }
 var _pending_mode         : PendingMode = PendingMode.NONE
@@ -228,13 +234,21 @@ var _help_panel  : PanelContainer = null
 var _help_button : Button         = null
 
 # ── Layout constants ───────────────────────────────────────────────────────────
-const GRID_X_STANDARD    : float = 168.0
+const GRID_X_STANDARD    : float = 16.0    # grid starts at x=16 in both modes now
 const GRID_X_IF_ELSE     : float = 16.0
 const GRID_Y             : float = 8.0
+# Phase 1 right command panel (placed commands) — same geometry as Phase 2 blueprint panel
+const STD_PANEL_X        : float = 816.0
+const STD_PANEL_RIGHT    : float = 1146.0
+const STD_PANEL_TOP      : float = 8.0
+const STD_PANEL_BOTTOM   : float = -112.0
+# Phase 2 blueprint panel — same values, kept separate for clarity
 const IFELSE_PANEL_X     : float = 816.0
 const IFELSE_PANEL_RIGHT : float = 1146.0
 const IFELSE_PANEL_TOP   : float = 8.0
 const IFELSE_PANEL_BOTTOM : float = -112.0
+# Bottom command palette panel (Phase 1 only)
+const BOTTOM_PALETTE_TOP : float = 536.0   # grid_y(8) + grid_h(528) = 536
 
 # ══════════════════════════════════════════════════════════════════════════════
 func _ready() -> void:
@@ -260,6 +274,7 @@ func _ready() -> void:
 
 	_build_help_ui()
 	_build_if_else_workspace()
+	_build_standard_ui()
 	_load_level(current_level_index)
 
 # ── IF-ELSE right-side panel ───────────────────────────────────────────────────
@@ -299,6 +314,77 @@ func _build_if_else_workspace() -> void:
 	_if_else_scroll.add_child(_if_else_workspace)
 
 	_if_else_panel = panel
+
+# ── Phase 1 UI — right command panel + bottom palette ─────────────────────────
+func _build_standard_ui() -> void:
+	var ui_layer = $UI
+
+	# ── Right command panel (shows placed command blocks vertically) ──────────
+	_std_panel = PanelContainer.new()
+	_std_panel.name          = "StdPanel"
+	_std_panel.anchor_left   = 0.0; _std_panel.anchor_right  = 0.0
+	_std_panel.anchor_top    = 0.0; _std_panel.anchor_bottom = 1.0
+	_std_panel.offset_left   = STD_PANEL_X
+	_std_panel.offset_right  = STD_PANEL_RIGHT
+	_std_panel.offset_top    = STD_PANEL_TOP
+	_std_panel.offset_bottom = STD_PANEL_BOTTOM
+	_std_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
+	var std_style := StyleBoxFlat.new()
+	std_style.bg_color     = Color(0.08, 0.08, 0.12, 1.0)
+	std_style.border_color = Color(0.95, 0.55, 0.05, 1.0)
+	for side in ["left","right","top","bottom"]:
+		std_style.set("border_width_" + side, 2)
+	_std_panel.add_theme_stylebox_override("panel", std_style)
+	_std_panel.visible = false
+	ui_layer.add_child(_std_panel)
+
+	var std_margin := MarginContainer.new()
+	for side in ["left","right","top","bottom"]:
+		std_margin.add_theme_constant_override("margin_" + side, 8)
+	_std_panel.add_child(std_margin)
+
+	var std_scroll := ScrollContainer.new()
+	std_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	std_scroll.size_flags_vertical   = Control.SIZE_EXPAND_FILL
+	std_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	std_margin.add_child(std_scroll)
+
+	_std_workspace = VBoxContainer.new()
+	_std_workspace.add_theme_constant_override("separation", 4)
+	_std_workspace.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	std_scroll.add_child(_std_workspace)
+
+	# ── Bottom command palette panel ─────────────────────────────────────────
+	_bottom_palette = PanelContainer.new()
+	_bottom_palette.name          = "BottomPalette"
+	_bottom_palette.anchor_left   = 0.0; _bottom_palette.anchor_right  = 1.0
+	_bottom_palette.anchor_top    = 1.0; _bottom_palette.anchor_bottom = 1.0
+	_bottom_palette.offset_left   = 6.0; _bottom_palette.offset_right  = -336.0
+	_bottom_palette.offset_top    = -112.0; _bottom_palette.offset_bottom = 0.0
+	# Leave room at the very bottom for run/backspace buttons
+	_bottom_palette.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_bottom_palette.grow_vertical   = Control.GROW_DIRECTION_BEGIN
+	var bp_style := StyleBoxFlat.new()
+	bp_style.bg_color = Color(0.10, 0.25, 0.45, 1.0)   # blue tint like screenshot
+	for side in ["left","right","top","bottom"]:
+		bp_style.set("border_width_" + side, 2)
+	bp_style.border_color = Color(0.3, 0.6, 1.0, 1.0)
+	_bottom_palette.add_theme_stylebox_override("panel", bp_style)
+	_bottom_palette.visible = false
+	ui_layer.add_child(_bottom_palette)
+
+	var bp_margin := MarginContainer.new()
+	for side in ["left","right","top","bottom"]:
+		bp_margin.add_theme_constant_override("margin_" + side, 6)
+	_bottom_palette.add_child(bp_margin)
+
+	var bp_hbox := HBoxContainer.new()
+	bp_hbox.add_theme_constant_override("separation", 8)
+	bp_hbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	bp_margin.add_child(bp_hbox)
+
+	# Store hbox so _refresh_palette can rebuild buttons into it
+	_bottom_palette.set_meta("buttons_hbox", bp_hbox)
 
 # ── Help UI ────────────────────────────────────────────────────────────────────
 func _build_help_ui() -> void:
@@ -412,25 +498,36 @@ func _reload_current_level() -> void:
 
 # ── Standard mode ──────────────────────────────────────────────────────────────
 func _enter_standard_mode(data: LevelData) -> void:
-	$UI/CommandPalette.visible     = true
+	# Hide all legacy scene panels
+	$UI/CommandPalette.visible     = false
+	$UI/WorkspacePanel.visible     = false   # MUST stay hidden — replaced by _std_panel
+	workspace.visible              = false
+	if _if_else_panel: _if_else_panel.visible = false
+
+	# Show Phase 1 new elements
+	if _std_panel:      _std_panel.visible      = true
+	if _bottom_palette: _bottom_palette.visible = true
 	$UI/BackspaceButton.visible    = true
 	$UI/RunButton.visible          = true
 	$UI/ActionCounterPanel.visible = true
-	$UI/WorkspacePanel.visible     = true
-	workspace.visible              = true
-	if _if_else_panel: _if_else_panel.visible = false
+
 	$GameWorld.position = Vector2(GRID_X_STANDARD, GRID_Y)
 	_refresh_palette(data.available_commands)
 
 # ── IF-ELSE mode ───────────────────────────────────────────────────────────────
 func _enter_if_else_mode(data: LevelData) -> void:
+	# Hide Phase 1 elements
 	$UI/CommandPalette.visible     = false
+	$UI/WorkspacePanel.visible     = false
+	if _std_panel:      _std_panel.visible      = false
+	if _bottom_palette: _bottom_palette.visible = false
+
+	# Show Phase 2 elements
 	$UI/BackspaceButton.visible    = true
 	$UI/RunButton.visible          = true
 	$UI/ActionCounterPanel.visible = false
-	$UI/WorkspacePanel.visible     = false
-	workspace.visible              = false
 	if _if_else_panel: _if_else_panel.visible = true
+
 	$GameWorld.position = Vector2(GRID_X_IF_ELSE, GRID_Y)
 	_populate_blueprint(data.level_name)
 
@@ -809,21 +906,124 @@ func _on_basic_pressed(cmd_type: CommandBlock.CommandType) -> void:
 func _finalise_block(block: CommandBlock) -> void:
 	if command_blocks.size() >= max_actions:
 		block.queue_free(); _flash_error(); return
-	workspace.add_child(block)
+
+	var row := _make_cmd_row(block)
+	if _std_workspace:
+		_std_workspace.add_child(row)
+	else:
+		workspace.add_child(block)   # fallback for edge cases
+
 	command_blocks.append(block)
+	_renumber_rows()
+	_update_counter()
+
+# ── Build a numbered + draggable row wrapping one CommandBlock ─────────────────
+func _make_cmd_row(block: CommandBlock) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.name = "CmdRow"
+	row.add_theme_constant_override("separation", 0)
+	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	# Line number label
+	var num_lbl := Label.new()
+	num_lbl.name               = "LineNum"
+	num_lbl.custom_minimum_size = Vector2(32, 44)
+	num_lbl.add_theme_font_size_override("font_size", 13)
+	num_lbl.add_theme_color_override("font_color", Color(0.6, 0.6, 0.6))
+	num_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	num_lbl.vertical_alignment   = VERTICAL_ALIGNMENT_CENTER
+	num_lbl.text = "1"
+	row.add_child(num_lbl)
+
+	# Small gap
+	var gap := Control.new()
+	gap.custom_minimum_size = Vector2(6, 0)
+	row.add_child(gap)
+
+	# The command block itself fills remaining space
+	block.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(block)
+
+	# Right-click to remove
 	block.gui_input.connect(func(event: InputEvent):
 		if event is InputEventMouseButton \
 		and event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
 			_remove_cmd(block))
-	_update_counter()
+
+	# Drag handle — whole row is draggable for reordering
+	_setup_row_drag(row, block)
+	return row
+
+# ── Drag-to-reorder ────────────────────────────────────────────────────────────
+var _drag_row        : HBoxContainer = null
+var _drag_start_y    : float         = 0.0
+var _drag_ghost      : Panel         = null   # visual ghost while dragging
+
+func _setup_row_drag(row: HBoxContainer, block: CommandBlock) -> void:
+	row.gui_input.connect(func(event: InputEvent):
+		if is_executing: return
+		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				_drag_row     = row
+				_drag_start_y = event.global_position.y
+			else:
+				if _drag_row == row:
+					_drag_row = null
+		if event is InputEventMouseMotion and _drag_row == row:
+			_handle_drag_motion(row, event.global_position.y)
+	)
+
+func _handle_drag_motion(row: HBoxContainer, global_y: float) -> void:
+	if _std_workspace == null: return
+	var rows := _std_workspace.get_children()
+	var my_idx := rows.find(row)
+	if my_idx < 0: return
+	# Find which slot the mouse is over
+	var target_idx := my_idx
+	for i in rows.size():
+		var r := rows[i] as Control
+		if r == null: continue
+		var mid_y := r.global_position.y + r.size.y * 0.5
+		if global_y < mid_y:
+			target_idx = i
+			break
+		target_idx = i
+	if target_idx == my_idx: return
+	# Move row and matching command_block entry
+	_std_workspace.move_child(row, target_idx)
+	var block_idx := command_blocks.find(_get_row_block(row))
+	if block_idx >= 0:
+		command_blocks.erase(_get_row_block(row))
+		command_blocks.insert(target_idx, _get_row_block(row))
+	_renumber_rows()
+
+func _get_row_block(row: HBoxContainer) -> CommandBlock:
+	for child in row.get_children():
+		if child is CommandBlock: return child
+	return null
+
+func _renumber_rows() -> void:
+	if _std_workspace == null: return
+	var idx := 1
+	for row in _std_workspace.get_children():
+		if row is HBoxContainer:
+			var lbl := row.get_node_or_null("LineNum")
+			if lbl: lbl.text = str(idx)
+			idx += 1
 
 func _add_basic_cmd(cmd_type: CommandBlock.CommandType) -> void:
 	_finalise_block(CommandBlock.new(cmd_type))
 
 func _remove_cmd(block: CommandBlock) -> void:
 	command_blocks.erase(block)
-	workspace.remove_child(block)
-	block.queue_free()
+	# Block lives inside a row HBoxContainer — free the whole row
+	var row = block.get_parent()
+	if row and row is HBoxContainer:
+		row.queue_free()
+	elif row:
+		row.remove_child(block)
+		block.queue_free()
+	_renumber_rows()
 	_update_counter()
 
 func _remove_last_cmd() -> void:
@@ -831,18 +1031,68 @@ func _remove_last_cmd() -> void:
 	_remove_cmd(command_blocks.back())
 
 func _clear_commands() -> void:
-	for b in command_blocks: b.queue_free()
+	# Free row containers (which contain the CommandBlocks)
+	if _std_workspace:
+		for row in _std_workspace.get_children(): row.queue_free()
+	else:
+		for b in command_blocks: b.queue_free()
 	command_blocks.clear()
 	_update_counter()
 
 func _refresh_palette(allowed: Array[String]) -> void:
-	btn_up.visible     = allowed.has("up")
-	btn_down.visible   = allowed.has("down")
-	btn_left.visible   = allowed.has("left")
-	btn_right.visible  = allowed.has("right")
-	btn_attack.visible = allowed.has("attack")
-	btn_loop.visible   = allowed.has("loop")
-	btn_append.visible = allowed.has("append")
+	# Hide the legacy left-panel buttons (they still exist in the scene but are unused)
+	btn_up.visible     = false
+	btn_down.visible   = false
+	btn_left.visible   = false
+	btn_right.visible  = false
+	btn_attack.visible = false
+	btn_loop.visible   = false
+	btn_append.visible = false
+
+	# Rebuild the bottom palette buttons
+	if _bottom_palette == null: return
+	var hbox : HBoxContainer = _bottom_palette.get_meta("buttons_hbox")
+	for child in hbox.get_children(): child.queue_free()
+
+	var all_cmds := [
+		["up",     "Move Up ↑",    CommandBlock.CommandType.MOVE_UP],
+		["down",   "Move Down ↓",  CommandBlock.CommandType.MOVE_DOWN],
+		["left",   "Move Left ←",  CommandBlock.CommandType.MOVE_LEFT],
+		["right",  "Move Right →", CommandBlock.CommandType.MOVE_RIGHT],
+		["attack", "⚔ ATTACK",     CommandBlock.CommandType.ATTACK],
+		["loop",   "↺ LOOP",       null],
+		["append", "&& APPEND",    null],
+	]
+
+	for cmd_info in all_cmds:
+		var key     : String = cmd_info[0]
+		var label   : String = cmd_info[1]
+		var cmd_type        = cmd_info[2]
+		if not (allowed.is_empty() or allowed.has(key)): continue
+
+		var btn := Button.new()
+		btn.text = label
+		btn.custom_minimum_size = Vector2(110, 60)
+		btn.add_theme_font_size_override("font_size", 14)
+		# Orange button style matching the command block colour
+		var sty := StyleBoxFlat.new()
+		sty.bg_color = Color(0.95, 0.55, 0.05, 1.0)
+		for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+			sty.set("corner_radius_" + corner, 6)
+		btn.add_theme_stylebox_override("normal", sty)
+		var sty_hover := sty.duplicate()
+		sty_hover.bg_color = Color(1.0, 0.65, 0.15, 1.0)
+		btn.add_theme_stylebox_override("hover", sty_hover)
+		btn.add_theme_color_override("font_color", Color.WHITE)
+
+		if key == "loop":
+			btn.pressed.connect(_on_loop_pressed)
+		elif key == "append":
+			btn.pressed.connect(_on_append_pressed)
+		else:
+			var ct : CommandBlock.CommandType = cmd_type
+			btn.pressed.connect(func(): _on_basic_pressed(ct))
+		hbox.add_child(btn)
 
 # ── Tutorial ───────────────────────────────────────────────────────────────────
 func _show_tutorial(level_index: int) -> void:

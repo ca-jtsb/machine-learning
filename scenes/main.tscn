@@ -38,6 +38,7 @@ script = ExtResource("1_sugp2")
 [node name="UI" type="CanvasLayer" parent="."]
 
 [node name="CommandPalette" type="VBoxContainer" parent="UI"]
+visible = false
 anchors_preset = 9
 anchor_bottom = 1.0
 offset_right = 160.0
@@ -76,15 +77,17 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
 
 [node name="WorkspacePanel" type="PanelContainer" parent="UI"]
-anchors_preset = 15
-anchor_right = 1.0
+anchors_preset = -1
 anchor_bottom = 1.0
-offset_top = 544.0
+offset_left = 816.0
+offset_top = 8.0
+offset_right = 1446.0
+offset_bottom = -112.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_workspace")
 
-[node name="Workspace" type="HBoxContainer" parent="UI/WorkspacePanel"]
+[node name="Workspace" type="VBoxContainer" parent="UI/WorkspacePanel"]
 layout_mode = 2
 theme_override_constants/separation = 8
 
@@ -117,11 +120,14 @@ grow_vertical = 0
 text = "▶ RUN PROGRAM"
 
 [node name="ActionCounterPanel" type="PanelContainer" parent="UI"]
-anchors_preset = 1
+anchors_preset = -1
 anchor_left = 1.0
+anchor_top = 1.0
 anchor_right = 1.0
+anchor_bottom = 1.0
 offset_left = -180.0
-offset_bottom = 60.0
+offset_top = -110.0
+offset_bottom = -96.0
 grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_counter")
 

@@ -49,8 +49,9 @@ var else_attack_dir   : String = ""   # direction for else_action if it is ATTAC
 var else2_attack_dir  : String = ""   # direction for else_action2 if it is ATTACK
 
 func _init(cmd_type: CommandType = CommandType.MOVE_UP) -> void:
-	command_type        = cmd_type
-	custom_minimum_size = Vector2(100, 40)
+	command_type              = cmd_type
+	custom_minimum_size       = Vector2(0, 44)
+	size_flags_horizontal     = Control.SIZE_EXPAND_FILL
 
 func _ready() -> void:
 	_update_label()
@@ -58,21 +59,29 @@ func _ready() -> void:
 	add_theme_font_size_override("font_size", 16)
 
 func _update_label() -> void:
+	# Style as an orange row matching the command palette aesthetic
+	var sty := StyleBoxFlat.new()
+	sty.bg_color = Color(0.95, 0.55, 0.05, 1.0)
+	for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+		sty.set("corner_radius_" + corner, 5)
+	add_theme_stylebox_override("normal",  sty)
+	add_theme_stylebox_override("hover",   sty)
+	add_theme_stylebox_override("pressed", sty)
+	add_theme_stylebox_override("focus",   sty)
+	add_theme_color_override("font_color", Color.WHITE)
+
 	match command_type:
-		CommandType.MOVE_UP:    text = "↑"
-		CommandType.MOVE_DOWN:  text = "↓"
-		CommandType.MOVE_LEFT:  text = "←"
-		CommandType.MOVE_RIGHT: text = "→"
-		CommandType.ATTACK:     text = "⚔"
+		CommandType.MOVE_UP:    text = "↑  Move Up"
+		CommandType.MOVE_DOWN:  text = "↓  Move Down"
+		CommandType.MOVE_LEFT:  text = "←  Move Left"
+		CommandType.MOVE_RIGHT: text = "→  Move Right"
+		CommandType.ATTACK:     text = "⚔  Attack"
 		CommandType.LOOP:
-			text = "↺ %s ×3" % _symbol(loop_action)
-			add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+			text = "↺  Loop  %s  ×3" % _symbol(loop_action)
 		CommandType.APPEND:
-			text = "%s && %s" % [_symbol(first_action), _symbol(second_action)]
-			add_theme_color_override("font_color", Color(0.4, 0.9, 1.0))
+			text = "%s  &&  %s" % [_symbol(first_action), _symbol(second_action)]
 		CommandType.REPEAT_IF_ELSE:
-			text = "[IF-ELSE]"
-			add_theme_color_override("font_color", Color(1.0, 0.6, 0.1))
+			text = "↺  If-Else"
 
 func _symbol(t: CommandType) -> String:
 	match t:

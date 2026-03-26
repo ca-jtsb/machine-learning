@@ -23,6 +23,7 @@ class_name LevelData
 @export var odd_cells         : Array[Vector2i] = []
 @export var button_cells      : Array[Vector2i] = []
 @export var lock_cells        : Array[Vector2i] = []
+@export var floor_cells : Array[Vector2i] = []
 
 # ── IF-ELSE mode ───────────────────────────────────────────────────────────────
 # When true:
