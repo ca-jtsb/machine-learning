@@ -22,12 +22,12 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	"res://levels/level_1.tres",
-	"res://levels/level_2.tres",
-	"res://levels/level_3.tres",
-	"res://levels/level_4.tres",
-	"res://levels/level_5.tres",
-	"res://levels/level_6.tres",
+	#"res://levels/level_1.tres",
+	#"res://levels/level_2.tres",
+	#"res://levels/level_3.tres",
+	#"res://levels/level_4.tres",
+	#"res://levels/level_5.tres",
+	#"res://levels/level_6.tres",
 	"res://levels/level_7.tres",
 	"res://levels/level_8.tres",
 	"res://levels/level_9.tres",
@@ -913,14 +913,21 @@ func _show_win_screen() -> void:
 # ── Standard palette handlers ──────────────────────────────────────────────────
 func _on_loop_pressed() -> void:
 	if is_executing: return
+	if _pending_mode == PendingMode.LOOP:
+		_pending_mode = PendingMode.NONE
+		_clear_palette_hint()
+		return
 	_show_loop_count_popup()
 
 func _on_append_pressed() -> void:
 	if is_executing: return
 	if _pending_mode in [PendingMode.APPEND_FIRST, PendingMode.APPEND_SECOND]:
-		_pending_mode = PendingMode.NONE; _clear_palette_hint(); return
+		# Cancel APPEND selection
+		_pending_mode = PendingMode.NONE
+		_clear_palette_hint()
+		return
 	_pending_mode = PendingMode.APPEND_FIRST
-	_set_palette_hint("Pick FIRST action…")
+	_set_palette_hint("Pick FIRST action to append…")
 
 func _on_basic_pressed(cmd_type: CommandBlock.CommandType) -> void:
 	if is_executing: return
@@ -929,13 +936,15 @@ func _on_basic_pressed(cmd_type: CommandBlock.CommandType) -> void:
 		PendingMode.LOOP:
 			var block := CommandBlock.new(CommandBlock.CommandType.LOOP)
 			block.loop_action = cmd_type
+			block.loop_count = _pending_loop_count
 			_finalise_block(block)
 			_pending_mode = PendingMode.NONE  # ← Reset FIRST
 			_clear_palette_hint()             # ← Then clear hint (which calls _update_action_button_visuals)
+			_pending_loop_count = 3  
 		PendingMode.APPEND_FIRST:
 			_pending_first_action = cmd_type
 			_pending_mode         = PendingMode.APPEND_SECOND
-			_set_palette_hint("Pick SECOND action…")
+			_set_palette_hint("Pick SECOND action to append…")  
 		PendingMode.APPEND_SECOND:
 			var block := CommandBlock.new(CommandBlock.CommandType.APPEND)
 			block.first_action  = _pending_first_action
@@ -1511,6 +1520,7 @@ func _show_loop_count_popup() -> void:
 
 
 # ── Update action button visuals for pending modes ────────────────────────────
+# ── Update action button visuals for pending modes ────────────────────────────
 func _update_action_button_visuals() -> void:
 	if _bottom_palette == null: return
 	var hbox : HBoxContainer = _bottom_palette.get_meta("buttons_hbox")
@@ -1524,11 +1534,14 @@ func _update_action_button_visuals() -> void:
 			var btn_key : String = child.get_meta("cmd_key", "")
 			var is_action_btn : bool = btn_key in action_keys
 			
-			if is_action_btn and _pending_mode == PendingMode.LOOP:
-				# Add yellow border when LOOP is waiting for action (NO FILL)
+			# Check if we're in LOOP or APPEND mode
+			var is_pending : bool = _pending_mode in [PendingMode.LOOP, PendingMode.APPEND_FIRST, PendingMode.APPEND_SECOND]
+			
+			if is_action_btn and is_pending:
+				# Add orange border when waiting for action selection (NO FILL)
 				var sty := StyleBoxFlat.new()
 				sty.bg_color = Color(0, 0, 0, 0)  # ← Transparent (no fill)
-				sty.border_color = Color(1.0, 0.95, 0.3, 1.0)  # Yellow border
+				sty.border_color = Color(1.0, 0.95, 0.3, 1.0)  # Yellow/orange border
 				for side in ["left","right","top","bottom"]:
 					sty.set("border_width_" + side, 3)
 				for corner in ["top_left","top_right","bottom_left","bottom_right"]:
@@ -1540,10 +1553,10 @@ func _update_action_button_visuals() -> void:
 				child.add_theme_stylebox_override("hover", sty_hover)
 				child.add_theme_stylebox_override("pressed", sty)
 			else:
-				# Restore original style (transparent fill)
+				# Restore original style (transparent fill, no border)
 				var sty := StyleBoxFlat.new()
 				sty.bg_color = Color(0, 0, 0, 0)  # ← Transparent (no fill)
-				sty.border_color = Color(0, 0, 0, 0)  # Orange border
+				sty.border_color = Color(0, 0, 0, 0)  # No border
 				for side in ["left","right","top","bottom"]:
 					sty.set("border_width_" + side, 2)
 				for corner in ["top_left","top_right","bottom_left","bottom_right"]:
@@ -1551,6 +1564,6 @@ func _update_action_button_visuals() -> void:
 				child.add_theme_stylebox_override("normal", sty)
 				
 				var sty_hover := sty.duplicate()
-				sty_hover.border_color = Color(1.0, 0.65, 0.15, 1.0)  # Lighter orange
+				sty_hover.border_color = Color(1.0, 0.65, 0.15, 1.0)
 				child.add_theme_stylebox_override("hover", sty_hover)
 				child.add_theme_stylebox_override("pressed", sty_hover)

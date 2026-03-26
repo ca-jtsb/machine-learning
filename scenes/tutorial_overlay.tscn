@@ -1,7 +1,7 @@
 [gd_scene load_steps=5 format=3 uid="uid://c05dldl2igary"]
 
 [ext_resource type="Script" uid="uid://b4f73fbekpu6h" path="res://scripts/tutorial_overlay.gd" id="1_3d8bu"]
-[ext_resource type="Texture2D" uid="uid://cmbiclakd640k" path="res://assets/enan-placeholder.jpg" id="2_gjsn7"]
+[ext_resource type="Texture2D" uid="uid://b5ifbtegwjqfg" path="res://assets/boss_sprite.png" id="2_gjsn7"]
 [ext_resource type="Texture2D" uid="uid://cjsvpfirhopxk" path="res://assets/pointer-placeholder.png" id="3_gjsn7"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gl2vx"]
@@ -25,10 +25,11 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -260.0
-offset_top = -420.0
-offset_right = -20.0
-offset_bottom = -20.0
+offset_left = -485.0
+offset_top = -603.0
+offset_right = 245.0
+grow_horizontal = 0
+grow_vertical = 0
 texture = ExtResource("2_gjsn7")
 expand_mode = 3
 stretch_mode = 4
