@@ -34,6 +34,7 @@ const COLOR_TEXT_HIGHLIGHT : Color = Color(0.15, 0.15, 0.15, 1.0)  # Dark text o
 # ── Basic block data ───────────────────────────────────────────────────────────
 var command_type  : CommandType = CommandType.MOVE_UP
 var loop_action   : CommandType = CommandType.MOVE_UP
+var loop_count    : int = 3 
 var first_action  : CommandType = CommandType.MOVE_UP
 var second_action : CommandType = CommandType.MOVE_RIGHT
 
@@ -101,7 +102,7 @@ func _update_label() -> void:
 		CommandType.MOVE_LEFT:      text = "←  Move Left"
 		CommandType.MOVE_RIGHT:     text = "→  Move Right"
 		CommandType.ATTACK:         text = "⚔  Attack"
-		CommandType.LOOP:           text = "↺  Loop  %s  ×3" % _symbol(loop_action)
+		CommandType.LOOP:           text = "↺  Loop  %s  ×%d" % [_symbol(loop_action), loop_count]
 		CommandType.APPEND:         text = "%s  &&  %s" % [_symbol(first_action), _symbol(second_action)]
 		CommandType.REPEAT_IF_ELSE: text = "↺  If-Else"
 
@@ -211,7 +212,7 @@ func execute(robot: Robot) -> void:
 		CommandType.MOVE_RIGHT: await robot.move_right()
 		CommandType.ATTACK:     await robot.attack()
 		CommandType.LOOP:
-			for _i in 3:
+			for _i in loop_count:
 				await _run_silent(robot, loop_action)
 			robot.action_completed.emit()
 		CommandType.APPEND:

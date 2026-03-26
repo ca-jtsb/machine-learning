@@ -253,6 +253,7 @@ var _bottom_palette    : PanelContainer  = null   # bottom orange command button
 enum PendingMode { NONE, LOOP, APPEND_FIRST, APPEND_SECOND }
 var _pending_mode         : PendingMode = PendingMode.NONE
 var _pending_first_action : CommandBlock.CommandType = CommandBlock.CommandType.MOVE_UP
+var _pending_loop_count   : int = 3
 
 # ── Help panel ─────────────────────────────────────────────────────────────────
 var _help_panel  : PanelContainer = null
@@ -912,10 +913,7 @@ func _show_win_screen() -> void:
 # ── Standard palette handlers ──────────────────────────────────────────────────
 func _on_loop_pressed() -> void:
 	if is_executing: return
-	if _pending_mode == PendingMode.LOOP:
-		_pending_mode = PendingMode.NONE; _clear_palette_hint(); return
-	_pending_mode = PendingMode.LOOP
-	_set_palette_hint("Pick action to loop ×3…")
+	_show_loop_count_popup()
 
 func _on_append_pressed() -> void:
 	if is_executing: return
@@ -932,7 +930,8 @@ func _on_basic_pressed(cmd_type: CommandBlock.CommandType) -> void:
 			var block := CommandBlock.new(CommandBlock.CommandType.LOOP)
 			block.loop_action = cmd_type
 			_finalise_block(block)
-			_pending_mode = PendingMode.NONE; _clear_palette_hint()
+			_pending_mode = PendingMode.NONE  # ← Reset FIRST
+			_clear_palette_hint()             # ← Then clear hint (which calls _update_action_button_visuals)
 		PendingMode.APPEND_FIRST:
 			_pending_first_action = cmd_type
 			_pending_mode         = PendingMode.APPEND_SECOND
@@ -1111,7 +1110,7 @@ func _refresh_palette(allowed: Array[String]) -> void:
 		if not (allowed.is_empty() or allowed.has(key)): continue
 
 		var btn := _make_palette_btn(label, tex_path, hover_color)
-
+		btn.set_meta("cmd_key", key)
 		if key == "loop":
 			btn.pressed.connect(_on_loop_pressed)
 		elif key == "append":
@@ -1381,12 +1380,14 @@ func _set_palette_hint(msg: String) -> void:
 	if lbl: lbl.text = msg
 	btn_loop.modulate   = Color.YELLOW if _pending_mode == PendingMode.LOOP else Color.WHITE
 	btn_append.modulate = Color.CYAN   if _pending_mode in [PendingMode.APPEND_FIRST, PendingMode.APPEND_SECOND] else Color.WHITE
-
+	_update_action_button_visuals()
+	
 func _clear_palette_hint() -> void:
 	var lbl = get_node_or_null("UI/CommandPalette/HintLabel")
 	if lbl: lbl.text = ""
 	btn_loop.modulate   = Color.WHITE
 	btn_append.modulate = Color.WHITE
+	_update_action_button_visuals()
 
 func _highlight(cmd: CommandBlock) -> void:
 	_clear_highlights(); cmd.modulate = Color.YELLOW
@@ -1415,3 +1416,141 @@ func _flash_error() -> void:
 	count_label.add_theme_color_override("font_color", Color.RED)
 	await get_tree().create_timer(0.3).timeout
 	_update_counter()
+	
+
+# ── Loop Count Popup ───────────────────────────────────────────────────────────
+func _show_loop_count_popup() -> void:
+	# Create dim overlay
+	var dim := ColorRect.new()
+	dim.color = Color(0, 0, 0, 0.5)
+	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	$UI.add_child(dim)
+
+	# Create centered popup panel
+	var popup := PanelContainer.new()
+	var popup_style := StyleBoxFlat.new()
+	popup_style.bg_color = Color(0.15, 0.15, 0.25, 1.0)
+	popup_style.border_color = Color(0.95, 0.55, 0.05, 1.0)
+	for side in ["left","right","top","bottom"]:
+		popup_style.set("border_width_" + side, 3)
+	popup_style.corner_radius_top_left = 8
+	popup_style.corner_radius_top_right = 8
+	popup_style.corner_radius_bottom_left = 8
+	popup_style.corner_radius_bottom_right = 8
+	popup.add_theme_stylebox_override("panel", popup_style)
+	
+	# Center on screen
+	popup.anchor_left = 0.5
+	popup.anchor_right = 0.5
+	popup.anchor_top = 0.5
+	popup.anchor_bottom = 0.5
+	popup.offset_left = -100
+	popup.offset_right = 100
+	popup.offset_top = -90
+	popup.offset_bottom = 90
+	
+	var margin := MarginContainer.new()
+	for side in ["left","right","top","bottom"]:
+		margin.add_theme_constant_override("margin_" + side, 15)
+	popup.add_child(margin)
+
+	var vbox := VBoxContainer.new()
+	vbox.add_theme_constant_override("separation", 8)
+	vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+	margin.add_child(vbox)
+
+	# Title
+	var title := Label.new()
+	title.text = "Loop Count"
+	title.add_theme_font_size_override("font_size", 16)
+	title.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	vbox.add_child(title)
+
+	# Number buttons (1-9)
+	var hbox := HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 4)
+	vbox.add_child(hbox)
+	
+	for i in range(1, 10):
+		var btn := Button.new()
+		btn.text = str(i)
+		btn.custom_minimum_size = Vector2(35, 35)
+		btn.add_theme_font_size_override("font_size", 14)
+		var btn_style := StyleBoxFlat.new()
+		btn_style.bg_color = Color(0.95, 0.55, 0.05, 1.0)
+		btn_style.corner_radius_top_left = 5
+		btn_style.corner_radius_top_right = 5
+		btn_style.corner_radius_bottom_left = 5
+		btn_style.corner_radius_bottom_right = 5
+		btn.add_theme_stylebox_override("normal", btn_style)
+		var btn_hover := btn_style.duplicate()
+		btn_hover.bg_color = Color(1.0, 0.65, 0.15, 1.0)
+		btn.add_theme_stylebox_override("hover", btn_hover)
+		btn.add_theme_color_override("font_color", Color.WHITE)
+		btn.pressed.connect(func():
+			_pending_loop_count = i
+			_pending_mode = PendingMode.LOOP
+			_set_palette_hint("Pick action to loop ×%d…" % i)
+			dim.queue_free()
+			popup.queue_free()
+		)
+		hbox.add_child(btn)
+
+	# Cancel button
+	var cancel_btn := Button.new()
+	cancel_btn.text = "Cancel"
+	cancel_btn.custom_minimum_size = Vector2(100, 32)
+	cancel_btn.add_theme_font_size_override("font_size", 13)
+	cancel_btn.pressed.connect(func():
+		dim.queue_free()
+		popup.queue_free()
+	)
+	vbox.add_child(cancel_btn)
+
+	$UI.add_child(popup)
+
+
+# ── Update action button visuals for pending modes ────────────────────────────
+func _update_action_button_visuals() -> void:
+	if _bottom_palette == null: return
+	var hbox : HBoxContainer = _bottom_palette.get_meta("buttons_hbox")
+	
+	# Define which button keys are action buttons (not loop/append)
+	var action_keys := ["up", "down", "left", "right", "attack"]
+	
+	for child in hbox.get_children():
+		if child is Button:
+			# Get the button's key from metadata
+			var btn_key : String = child.get_meta("cmd_key", "")
+			var is_action_btn : bool = btn_key in action_keys
+			
+			if is_action_btn and _pending_mode == PendingMode.LOOP:
+				# Add yellow border when LOOP is waiting for action (NO FILL)
+				var sty := StyleBoxFlat.new()
+				sty.bg_color = Color(0, 0, 0, 0)  # ← Transparent (no fill)
+				sty.border_color = Color(1.0, 0.95, 0.3, 1.0)  # Yellow border
+				for side in ["left","right","top","bottom"]:
+					sty.set("border_width_" + side, 3)
+				for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+					sty.set("corner_radius_" + corner, 6)
+				child.add_theme_stylebox_override("normal", sty)
+				
+				var sty_hover := sty.duplicate()
+				sty_hover.border_color = Color(1.0, 0.85, 0.1, 1.0)
+				child.add_theme_stylebox_override("hover", sty_hover)
+				child.add_theme_stylebox_override("pressed", sty)
+			else:
+				# Restore original orange OUTLINE style (transparent fill)
+				var sty := StyleBoxFlat.new()
+				sty.bg_color = Color(0, 0, 0, 0)  # ← Transparent (no fill)
+				sty.border_color = Color(0, 0, 0, 0)  # Orange border
+				for side in ["left","right","top","bottom"]:
+					sty.set("border_width_" + side, 2)
+				for corner in ["top_left","top_right","bottom_left","bottom_right"]:
+					sty.set("corner_radius_" + corner, 6)
+				child.add_theme_stylebox_override("normal", sty)
+				
+				var sty_hover := sty.duplicate()
+				sty_hover.border_color = Color(1.0, 0.65, 0.15, 1.0)  # Lighter orange
+				child.add_theme_stylebox_override("hover", sty_hover)
+				child.add_theme_stylebox_override("pressed", sty_hover)
