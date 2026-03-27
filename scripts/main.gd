@@ -22,12 +22,12 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	#"res://levels/level_1.tres",
-	#"res://levels/level_2.tres",
-	#"res://levels/level_3.tres",
-	#"res://levels/level_4.tres",
-	#"res://levels/level_5.tres",
-	#"res://levels/level_6.tres",
+	"res://levels/level_1.tres",
+	"res://levels/level_2.tres",
+	"res://levels/level_3.tres",
+	"res://levels/level_4.tres",
+	"res://levels/level_5.tres",
+	"res://levels/level_6.tres",
 	"res://levels/level_7.tres",
 	"res://levels/level_8.tres",
 	"res://levels/level_9.tres",
@@ -138,11 +138,10 @@ const BLUEPRINTS : Dictionary = {
 			"else_action": "move_right"
 		},
 		{
-			"repeat_count": 8,
+			"repeat_count": 10,
 			"check_direction": "RIGHT", "check_condition": "is_obstacle",
-			"then_action": "attack", "then_attack_dir": "RIGHT",
-			"compound_then": true, "then_action2": "move_right",
-			"else_action": "move_right"
+			"then_action": "?",
+			"else_action": "?"
 		},
 		{
 			"repeat_count": 5,
@@ -186,15 +185,50 @@ const BLUEPRINTS : Dictionary = {
 # Key = level_name, value = { "hint": text, "alt_key": BLUEPRINTS key to show }
 const ALT_SOLUTIONS : Dictionary = {
 	"Level 9": {
-		"hint": "Great work! But did you know you can combine conditions with [b]&&[/b]?\nThat lets you check TWO directions at once — reducing your blocks from 2 down to 1!",
+		# 👇 Now an array of tutorial steps instead of a single string
+		"hint": [
+			{
+				"text": "🎉 Great work! Now let's optimize with [b]&& (AND)[/b] logic.",
+				"pointer_pos": null,
+			},
+			{
+				"text": "Instead of two separate blocks, check TWO conditions in one:\n[b]RIGHT == isObstacle && UP == isFree[/b]",
+				"pointer_pos": Vector2(800, 90),   # Points at IF condition dropdowns
+				"box_position": "near_pointer",
+			},
+			{
+				"text": "If [b]BOTH[/b] are true → robot moves UP.\nIf not → it moves RIGHT.\n\n[b]This reduces your blocks from 2 → 1![/b]",
+				"pointer_pos": Vector2(800, 120),   # Points at THEN/ELSE rows
+				"box_position": "near_pointer",
+			},
+			{
+				"text": "Try running the program above to see it in action! ▶",
+				"pointer_pos": null,   # Center of right blueprint panel
+			},
+		],
 		"alt_key": "Level 9 - Alt"
 	},
-	"Level 10": {
-		"hint": "Excellent! Notice Block 1 used [b]RIGHT == isFree && UP == isFree[/b].\nHere's an alternative — using [b]RIGHT == isObstacle && UP == isFree[/b] instead.\nSame result, different way to think about it!",
-		"alt_key": "Level 10 - Alt"
-	},
+
 	"Final Level": {
-		"hint": "Excellent! Notice Block 1 used [b]RIGHT == isFree && UP == isFree[/b].\nHere's an alternative — using [b]RIGHT == isObstacle && UP == isFree[/b] instead.\nSame result, different way to think about it!",
+		"hint": [
+			{
+				"text": "The level reseted? I think there was a glitch in the system.",
+				"pointer_pos": null,
+			},
+			{
+				"text": "It also changed the blueprint for the level...",
+				"pointer_pos": null,
+			},
+			{
+				"text": "I guess the solution is more optimized though as it utilizes lesser loop blocks.",
+				"pointer_pos": null,
+			},
+			{
+				"text": "But it uses the '&&' conditions just like in the previous level. Just figure out the right commands and you will arrive at the exit.",
+				"pointer_pos": Vector2(800, 120),   # Points at THEN/ELSE rows
+				"box_position": "near_pointer",
+			},
+		],
 		"alt_key": "Final Level - Alt"
 	},
 }
@@ -821,27 +855,40 @@ func _on_level_complete() -> void:
 # ── Alt-solution flow ──────────────────────────────────────────────────────────
 func _show_alt_solution_flow(level_name: String) -> void:
 	var alt_info : Dictionary = ALT_SOLUTIONS[level_name]
-	var hint_text : String    = alt_info["hint"]
+	var hint_data : Variant   = alt_info["hint"]
 	var alt_key   : String    = alt_info["alt_key"]
-
-	# Show assistant hint overlay
-	_show_assistant_overlay(hint_text, func():
-		# After hint dismissed → load alt blueprint into panel
-		_load_alt_blueprint(alt_key, func():
-			# After alt demo → normal level complete popup
-			_show_level_complete_popup()
-		)
+ 
+	# ── 1. Load the alt blueprint immediately so it's visible behind the hint ──
+	_load_alt_blueprint(alt_key, func():
+		_show_level_complete_popup()
 	)
-
-func _show_assistant_overlay(text: String, on_done: Callable) -> void:
-	# Reuse TutorialOverlay with a single step
+ 
+	# ── 2. Now show the hint overlay on top ────────────────────────────────────
+	# on_done is a no-op here because _load_alt_blueprint already wired up
+	# the Continue button → _show_level_complete_popup chain.
+	_show_assistant_overlay(hint_data, func(): pass)
+ 
+func _show_assistant_overlay(hint_data: Variant, on_done: Callable) -> void:
 	var overlay = TutorialOverlay.instantiate()
 	$UI.add_child(overlay)
-	overlay.tutorial_finished.connect(func():
-		on_done.call()
-	)
-	var steps : Array[Dictionary] = [{"text": text, "pointer_pos": null}]
+	overlay.tutorial_finished.connect(func(): on_done.call())
+ 
+	var steps : Array[Dictionary] = []
+ 
+	if typeof(hint_data) == TYPE_STRING:
+		# Legacy: single hint string → wrap in a 1-step array
+		steps.append({"text": hint_data, "pointer_pos": null})
+	elif typeof(hint_data) == TYPE_ARRAY:
+		# New: array of step dicts — copy element-by-element into the typed array
+		for entry in hint_data:
+			if typeof(entry) == TYPE_DICTIONARY:
+				steps.append(entry)
+	else:
+		# Fallback safety
+		steps.append({"text": "Check the blueprint panel on the right!", "pointer_pos": Vector2(980, 270)})
+ 
 	overlay.setup(steps)
+ 
 
 func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
 	_showing_alt = true   # suppress level_complete popup while alt is running
@@ -1276,34 +1323,59 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 		0:
 			return [
 				{
-					"text": "[b]Hey there, fellow programmer![/b]\n\nOur company is about to release a groundbreaking system — but a cyberattack from our rivals has corrupted it. We need you to regain control!",
+					"text": "[b]Hey there, fellow programmer! Our company, PeaceTech, is about to release some groundbreaking system that can save the world.",
+					"pointer_pos": null,
+				},
+				{
+					"text": "[b]But wait! A cybersecurity attack from our rival TechSupport??",
+					"pointer_pos": null,
+				},
+				{
+					"text": "[b]Programmer, we need to save our project from the virus.",
+					"pointer_pos": null,
+				},
+				{
+					"text": "[b]If we solve the puzzles given to us, we’ll be able to regain control of our systems and bring world peace(?).",
 					"pointer_pos": null,
 				},
 				{
 					"text": "Your goal is to create a sequence of movements for the robot to successfully reach the exit.",
-					"pointer_pos": null,   # TODO: point to EXIT tile once its screen position is known
+					"pointer_pos": Vector2(740, 220),   # points at the movement buttons in the palette
+					"pointer_rotation": 135.0,
+					"box_position": Vector2(300, 210)
 				},
 				{
 					"text": "These buttons are your controls. Moving [b]Up, Down, Left, or Right[/b] slides the robot in that direction until it hits a wall.",
-					"pointer_pos": Vector2(696, 461),   # points at the movement buttons in the palette
-					"box_position": "near_pointer"
+					"pointer_pos": Vector2(140, 490),   # points at the movement buttons in the palette
+					"pointer_rotation": 135.0,
+					"box_position": Vector2(140, 380)
 				},
 				{
 					"text": "[b]&&  APPEND[/b] lets you combine two moves into a single action slot.",
-					"pointer_pos": Vector2(750, 461),   # points at the Append button
-					"box_position": "near_pointer"
+					"pointer_pos": Vector2(480, 530),   # points at the Append button
+					"pointer_rotation": 170.0,
+					"box_position": Vector2(200, 380)
 				},
 				{
-					"text": "The moves you choose appear down here in the workspace, in the order they will run.",
-					"pointer_pos": Vector2(576, 590),  # points at the workspace panel
+					"text": "Here is where the sequence of moves will appear once you start choosing the actions. [b]Right click[/b] on the move to delete.",
+					"pointer_pos": Vector2(750, 120),  # points at the workspace panel
+					"box_position": Vector2(350, 100)
 				},
 				{
-					"text": "When you are ready, press [b]RUN PROGRAM[/b] to send your sequence to the robot.",
-					"pointer_pos": Vector2(1064, 624), # points at the Run button
+					"text": "When you are ready, press [b]RUN PROGRAM[/b] to activate the sequence you just created.",
+					"pointer_pos": Vector2(840, 580), # points at the Run button
+					"pointer_rotation": 45.0,
+					"box_position": Vector2(800, 400)
 				},
 				{
-					"text": "Watch this counter carefully. Each level has an action limit — don't go over it!\n\nWe're counting on you. Good luck!",
-					"pointer_pos": Vector2(1060, 30),  # points at the action counter top-right
+					"text": "But be careful of this counter. Each level has a specific limit on the actions you choose, so make sure you don’t go over the limit.",
+					"pointer_pos": Vector2(900, 500),  # points at the action counter top-right
+					"pointer_rotation": 70.0,
+					"box_position": Vector2(800, 300)
+				},
+				{
+					"text": "[b]We’re counting on you to save PeachTech. Good luck!",
+					"pointer_pos": null,
 				},
 			]
 
@@ -1311,12 +1383,25 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 		1:
 			return [
 				{
+					"text": "[b]Nice job clearing the first level! But wait...",
+					"pointer_pos": null,
+				},
+				{
 					"text": "Boxes are blocking the path! The number on each box shows how many hits it takes to break it.",
-					"pointer_pos": Vector2(576, 272),  # TODO: point at a collapsible block on the grid
+					"pointer_pos": Vector2(580, 350),  # TODO: point at a collapsible block on the grid
+					"pointer_rotation": 70.0
 				},
 				{
 					"text": "Use [b]ATTACK[/b] to hit a box. You can also use [b]LOOP[/b] to hit it multiple times in one slot.",
-					"pointer_pos": Vector2(80, 200),   # points at the Attack button in palette
+					"pointer_pos": Vector2(380, 500),   # points at the Attack button in palette
+					"pointer_rotation": 110.0,
+					"box_position": Vector2(420, 400)
+				},
+				{
+					"text": "You can also use [b]LOOP[/b] to hit it multiple times in one slot.",
+					"pointer_pos": Vector2(480, 500),   # points at the Attack button in palette
+					"pointer_rotation": 110.0,
+					"box_position": Vector2(520, 400)
 				},
 			]
 
@@ -1324,12 +1409,24 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 		2:
 			return [
 				{
+					"text": "[b]Nice job keep it up!",
+					"pointer_pos": null,
+				},
+				{
+					"text": "[b]But before you proceed Let me explain [b]Even[/b] and [b]Odd[/b] blocks",
+					"pointer_pos": null,
+				},
+				{
 					"text": "[b]Even blocks[/b] only open when the action that reaches them is even-numbered — action 2, 4, 6, and so on.",
-					"pointer_pos": null,   # TODO: point at an even block on this level's grid
+					"pointer_pos": Vector2(420, 60),   
+					"pointer_rotation": 110.0,
+					"box_position": Vector2(520, 120)
 				},
 				{
 					"text": "[b]Odd blocks[/b] open on odd-numbered actions — 1, 3, 5...\n\nPlan your sequence carefully so you have a clear path when you need it!",
-					"pointer_pos": null,   # TODO: point at an odd block on this level's grid
+					"pointer_pos": Vector2(420, 320),   
+					"pointer_rotation": 110.0,
+					"box_position": Vector2(520, 320)
 				},
 			]
 
@@ -1337,8 +1434,32 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 		3:
 			return [
 				{
-					"text": "Locked doors are blocking the path. Find the switch and step on it to unlock the door!",
-					"pointer_pos": null,   # TODO: point at the lock or switch tile
+					"text": "[b]Nice work!",
+					"pointer_pos": null,
+				},
+				{
+					"text": "[b]Oh yea...",
+					"pointer_pos": null,
+				},
+				{
+					"text": "A level can also have locked doors blocking the path.",
+					"pointer_pos": Vector2(420, 400),   
+					"pointer_rotation": 110.0,
+					"box_position": Vector2(520, 420)
+				},
+				{
+					"text": "Find and press the switch in order to open them!",
+					"pointer_pos": Vector2(720, 60),   
+					"pointer_rotation": 110.0,
+					"box_position": Vector2(820, 160)
+				},
+				{
+					"text": "[b]*Static*",
+					"pointer_pos": null,
+				},
+				{
+					"text": "[b]hel..o...I thin..I am discon...",
+					"pointer_pos": null,
 				},
 			]
 
@@ -1346,24 +1467,60 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 		6:
 			return [
 				{
+					"text": "[b]Hello? Hello? Nice I have restored the communication line.",
+					"pointer_pos": null,
+				},
+				{
 					"text": "Before you go further — the system is handing you something new.\n\nUp until now you've been pressing commands one by one. This sector is different. You'll be given a [b]blueprint[/b] — a program that's already half-written. Your job is to fill in the blanks.",
 					"pointer_pos": null,
 				},
 				{
-					"text": "See the [b]REPEAT[/b] block? It runs whatever is inside it N times in a row. Each time it runs, it checks the situation fresh.\n\nHere's the key difference: the robot now moves [b]exactly one tile per iteration[/b]. It does not slide.",
-					"pointer_pos": Vector2(920, 50),   # points at the REPEAT header / spinbox
+					"text": "See the [b]LOOP[/b] block? It runs whatever is inside it 6 times in a row. Each time it runs, it checks the situation fresh.\n\nHere's the key difference: the robot now moves [b]exactly one tile per iteration[/b]. It does not slide. So adjust the number of times it will loop by increasing or decreasing the number. ",
+					"pointer_pos": Vector2(880, 25),   # points at the REPEAT header / spinbox
+					"box_position": Vector2(400, 50)
 				},
 				{
 					"text": "Inside the repeat there is always an [b]IF[/b] and an [b]ELSE[/b].\n\nEvery iteration, the robot asks the IF question. If the answer is yes — it does the IF action. If no — it does the ELSE action. One or the other. Never both.",
-					"pointer_pos": Vector2(920, 110),  # points at the IF/ELSE rows
+					"pointer_pos": Vector2(750, 75),  
+					"box_position": Vector2(350, 50)
 				},
 				{
-					"text": "The condition always looks like: [b]direction == isFree[/b]\n\n[b]==[/b] means 'is equal to' — it is asking a question, not setting something.\n[b]isFree[/b] means the tile is passable. [b]isObstacle[/b] means it is blocked.",
-					"pointer_pos": Vector2(920, 90),   # points at the IF condition row
+					"text": "The condition always looks like: [b]direction == Free[/b]\n\n[b]==[/b] means 'is equal to' — it is asking a question, not setting something.",
+					"pointer_pos": Vector2(925, 70),   # points at the IF condition row
+					"box_position": Vector2(400, 50)
 				},
 				{
-					"text": "See the blank dropdowns? That's what you are filling in.\n\nThe structure is fixed. You choose what goes inside — the direction to check, the condition, and what action to take.",
-					"pointer_pos": Vector2(920, 100),  # points at the blank dropdown area
+					"text": "To the left of the == is a drop down with directions: Up, Down, Left and Right.",
+					"pointer_pos": Vector2(850, 75),  
+					"box_position": Vector2(400, 50)
+				},
+				{
+					"text": "To the right of the == is a drop down with the conditions: \n [b]Free[/b], means the tile is passable.\n and \n [b]Obstacle[/b], means it is blocked.",
+					"pointer_pos": Vector2(950, 75),  
+					"box_position": Vector2(400, 50)
+				},
+				{
+					"text": "Putting them together looks like this \n If Up == Free ",
+					"pointer_pos": null,  
+					"box_position": Vector2(350, 50)
+				},
+				{
+					"text": "This is asking if the tile above you is free. If this is true the robot will then do the 'then' command. If it's false the robot will then do the 'else' command.",
+					"pointer_pos": null,  
+					"box_position": Vector2(350, 50)  
+				},
+				{
+					"text": "So this: If Left == Obstacle means if the tile to your left is an obstacle then the robot will do the 'then' command. If not the robot will then do the 'else' command.",
+					"pointer_pos": null,  
+					"box_position": Vector2(350, 50)
+				},
+				{
+					"text": "That's pretty much the gist of it. \n\nThe structure is fixed. You choose what goes inside — the direction to check, the condition, and what action to take to reach the exit.",
+					"pointer_pos": null
+				},
+				{
+					"text": "So fill in all the dropdowns and hit RUN. You've seen how this works — now figure it out yourself!",
+					"pointer_pos": null
 				},
 			]
 
@@ -1371,8 +1528,16 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 		8:
 			return [
 				{
-					"text": "[b]Your turn![/b]\n\nFill in all the blank dropdowns and hit RUN. You've seen how this works — now figure it out yourself!",
-					"pointer_pos": Vector2(920, 100),  # points at blank dropdowns in right panel
+					"text": "[b]Good work! Just keep going!",
+					"pointer_pos": null,
+				},
+			]
+					# ── LEVEL 10 (index 9) — first independent attempt ─────────────────────
+		9:
+			return [
+				{
+					"text": "[b]Good work! You're almost there!",
+					"pointer_pos": null,
 				},
 			]
 
