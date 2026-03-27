@@ -22,12 +22,12 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	"res://levels/level_1.tres",
-	"res://levels/level_2.tres",
-	"res://levels/level_3.tres",
-	"res://levels/level_4.tres",
-	"res://levels/level_5.tres",
-	"res://levels/level_6.tres",
+	#"res://levels/level_1.tres",
+	#"res://levels/level_2.tres",
+	#"res://levels/level_3.tres",
+	#"res://levels/level_4.tres",
+	#"res://levels/level_5.tres",
+	#"res://levels/level_6.tres",
 	"res://levels/level_7.tres",
 	"res://levels/level_8.tres",
 	"res://levels/level_9.tres",
@@ -1285,11 +1285,13 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 				},
 				{
 					"text": "These buttons are your controls. Moving [b]Up, Down, Left, or Right[/b] slides the robot in that direction until it hits a wall.",
-					"pointer_pos": Vector2(80, 140),   # points at the movement buttons in the palette
+					"pointer_pos": Vector2(696, 461),   # points at the movement buttons in the palette
+					"box_position": "near_pointer"
 				},
 				{
 					"text": "[b]&&  APPEND[/b] lets you combine two moves into a single action slot.",
-					"pointer_pos": Vector2(80, 280),   # points at the Append button
+					"pointer_pos": Vector2(750, 461),   # points at the Append button
+					"box_position": "near_pointer"
 				},
 				{
 					"text": "The moves you choose appear down here in the workspace, in the order they will run.",
