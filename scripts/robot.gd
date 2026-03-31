@@ -19,8 +19,16 @@ var facing_dir      : Direction = Direction.RIGHT
 
 var block_manager : BlockManager = null
 
-var _body_rect     : ColorRect = null
-var _dir_indicator : ColorRect = null
+# ── Sprite path ────────────────────────────────────────────────────────────────
+# Set this to your robot PNG path. The sprite should face DOWNWARD in the source
+# image — rotations are applied automatically for each direction.
+# Set to "" to use the colored rectangle placeholder instead.
+const ROBOT_SPRITE_PATH : String = "res://assets/Robot_sprite.png"
+
+var _sprite           : Sprite2D  = null   # robot sprite (if asset loaded)
+var _body_rect        : ColorRect = null   # fallback placeholder
+var _bob_tween        : Tween     = null   # looping bob animation while moving
+var _sprite_base_scale : float    = 1.0    # base scale set in _build_visuals
 
 func _ready() -> void:
 	z_index = 10
@@ -29,26 +37,38 @@ func _ready() -> void:
 	target_position = position
 
 func _build_visuals() -> void:
-	_body_rect          = ColorRect.new()
-	_body_rect.size     = Vector2(TILE_SIZE - 12, TILE_SIZE - 12)
-	_body_rect.position = Vector2(6, 6)
-	_body_rect.color    = Color(0.9, 0.15, 0.15)
-	add_child(_body_rect)
-	_dir_indicator          = ColorRect.new()
-	_dir_indicator.size     = Vector2(14, 14)
-	_dir_indicator.color    = Color(1, 1, 1, 0.9)
-	add_child(_dir_indicator)
+	var half : float = TILE_SIZE / 2.0
+
+	# Try loading the sprite asset
+	if ROBOT_SPRITE_PATH != "" and ResourceLoader.exists(ROBOT_SPRITE_PATH):
+		_sprite          = Sprite2D.new()
+		_sprite.texture  = load(ROBOT_SPRITE_PATH)
+		_sprite.position = Vector2(half, half)   # centre on tile
+		# Scale to fit within the tile (leave a small margin)
+		var tex_size : Vector2 = _sprite.texture.get_size()
+		var fit      : float   = (TILE_SIZE - 4) / max(tex_size.x, tex_size.y)
+		_sprite.scale = Vector2(fit, fit)
+		_sprite_base_scale = fit   # store for squeeze restoration
+		add_child(_sprite)
+	else:
+		# Fallback: plain coloured rectangle
+		_body_rect          = ColorRect.new()
+		_body_rect.size     = Vector2(TILE_SIZE - 12, TILE_SIZE - 12)
+		_body_rect.position = Vector2(6, 6)
+		_body_rect.color    = Color(0.9, 0.15, 0.15)
+		add_child(_body_rect)
+
 	_update_dir_indicator()
 
 func _update_dir_indicator() -> void:
-	if _dir_indicator == null:
-		return
-	var half : float = TILE_SIZE / 2.0
-	match facing_dir:
-		Direction.UP:    _dir_indicator.position = Vector2(half - 7, 8)
-		Direction.DOWN:  _dir_indicator.position = Vector2(half - 7, TILE_SIZE - 22)
-		Direction.LEFT:  _dir_indicator.position = Vector2(8,        half - 7)
-		Direction.RIGHT: _dir_indicator.position = Vector2(TILE_SIZE - 22, half - 7)
+	# Rotate sprite to face the current direction.
+	# Source image faces DOWN = 0°.
+	if _sprite:
+		match facing_dir:
+			Direction.DOWN:  _sprite.rotation_degrees = 0.0
+			Direction.LEFT:  _sprite.rotation_degrees = 90.0
+			Direction.UP:    _sprite.rotation_degrees = 180.0
+			Direction.RIGHT: _sprite.rotation_degrees = 270.0
 
 func _physics_process(delta: float) -> void:
 	if is_moving:
@@ -56,6 +76,32 @@ func _physics_process(delta: float) -> void:
 		if position.distance_to(target_position) < 1.0:
 			position  = target_position
 			is_moving = false
+			_stop_bob()
+
+# ── Sprite bob animation ───────────────────────────────────────────────────────
+func _start_bob() -> void:
+	if _sprite == null: return
+	if _bob_tween and _bob_tween.is_running(): return
+	# Reset vertical offset to zero first
+	_sprite.position.y = TILE_SIZE / 2.0
+	_bob_tween = create_tween().set_loops()
+	_bob_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	# Bob up and down by 3px, cycle ~0.28s
+	_bob_tween.tween_property(_sprite, "position:y", TILE_SIZE / 2.0 - 3.0, 0.14)
+	_bob_tween.tween_property(_sprite, "position:y", TILE_SIZE / 2.0 + 3.0, 0.14)
+
+func _stop_bob() -> void:
+	if _sprite == null: return
+	if _bob_tween:
+		_bob_tween.kill()
+		_bob_tween = null
+	# Snap back to centre and do a small landing squeeze
+	var tw := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tw.tween_property(_sprite, "position:y", TILE_SIZE / 2.0, 0.08)
+	# Horizontal squeeze: flatten briefly then spring back to base scale
+	var sq := create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	sq.tween_property(_sprite, "scale:x", _sprite_base_scale * 1.18, 0.06)
+	sq.tween_property(_sprite, "scale:x", _sprite_base_scale,        0.10)
 
 # ── Public API — slide until wall (original mechanic) ─────────────────────────
 func move_up()    -> void: await _slide(Direction.UP);    action_completed.emit()
@@ -94,6 +140,7 @@ func _step_one(dir: Direction) -> void:
 	grid_position   = next
 	target_position = grid_to_world(grid_position)
 	is_moving       = true
+	_start_bob()
 	await _wait_for_arrival()
 	if block_manager:
 		block_manager.on_robot_enter(grid_position)
@@ -124,6 +171,7 @@ func _slide(dir: Direction) -> void:
 		grid_position   = next
 		target_position = grid_to_world(grid_position)
 		is_moving       = true
+		_start_bob()
 		await _wait_for_arrival()
 		if block_manager:
 			var done : bool = block_manager.on_robot_enter(grid_position)

@@ -58,7 +58,7 @@ const PTR_OFFSET   : float = 60.0
 #   POINTER_BOB_SPEED    — seconds for one half-swing (peak → trough).
 #                          0.35–0.55 looks natural. Smaller = faster.
 # ══════════════════════════════════════════════════════════════════════════════
-const POINTER_TEXTURE      : String  = "C:/Users/jctha/Desktop/IESERGA/machine-learning/assets/UI/pointer.png"               # e.g. "res://assets/UI/arrow.png"
+const POINTER_TEXTURE      : String  = "res://assets/UI/pointer.png"               # e.g. "res://assets/UI/arrow.png"
 const POINTER_SIZE         : Vector2 = Vector2(48, 48)
 const POINTER_ROTATION     : float   = 0.0              # degrees — global default
 const POINTER_PIVOT        : Vector2 = Vector2(0.5, 0.5)
