@@ -1,6 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://m0xyy83fyir5"]
+[gd_scene format=3 uid="uid://m0xyy83fyir5"]
 
 [ext_resource type="Script" uid="uid://bu05r0n03i0qk" path="res://scripts/level_complete.gd" id="1_hhoem"]
+[ext_resource type="FontFile" uid="uid://c2548rhojq0du" path="res://fonts/PressStart2P-Regular.ttf" id="2_4x1ak"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hhoem"]
 bg_color = Color(0.16470589, 0.16470589, 0.2901961, 1)
@@ -10,10 +11,10 @@ border_width_right = 2
 border_width_bottom = 2
 border_color = Color(0.41568628, 0.41568628, 0.6666667, 1)
 
-[node name="LevelComplete" type="CanvasLayer"]
+[node name="LevelComplete" type="CanvasLayer" unique_id=1182551517]
 script = ExtResource("1_hhoem")
 
-[node name="LevelCompletePanel" type="PanelContainer" parent="."]
+[node name="LevelCompletePanel" type="PanelContainer" parent="." unique_id=677075959]
 z_index = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -28,27 +29,28 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hhoem")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="LevelCompletePanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="LevelCompletePanel" unique_id=90727883]
 layout_mode = 2
 theme_override_constants/separation = 20
 alignment = 1
 
-[node name="TitleLabel" type="Label" parent="LevelCompletePanel/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="LevelCompletePanel/VBoxContainer" unique_id=1576464987]
 layout_mode = 2
 theme_override_font_sizes/font_size = 37
 text = "Level Complete!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CenterContainer" type="CenterContainer" parent="LevelCompletePanel/VBoxContainer"]
+[node name="CenterContainer" type="CenterContainer" parent="LevelCompletePanel/VBoxContainer" unique_id=812026902]
 layout_mode = 2
 
-[node name="NextButton" type="Button" parent="LevelCompletePanel/VBoxContainer/CenterContainer"]
+[node name="NextButton" type="Button" parent="LevelCompletePanel/VBoxContainer/CenterContainer" unique_id=1107982735]
 layout_mode = 2
+theme_override_fonts/font = ExtResource("2_4x1ak")
 theme_override_font_sizes/font_size = 13
 text = "▶  Next Level"
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=708481288]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

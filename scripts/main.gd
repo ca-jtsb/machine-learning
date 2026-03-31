@@ -11,6 +11,7 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 @onready var count_label   : Label         = $UI/ActionCounterPanel/VBoxContainer/CountLabel
 @onready var title_label   : Label         = $UI/ActionCounterPanel/VBoxContainer/TitleLabel
 @onready var btn_backspace : Button        = $UI/BackspaceButton
+@onready var help_button   : Button        = $UI/HelpButton
 
 @onready var btn_up     : Button = $UI/CommandPalette/UpButton
 @onready var btn_down   : Button = $UI/CommandPalette/DownButton
@@ -323,6 +324,7 @@ func _ready() -> void:
 	btn_loop.pressed.connect(_on_loop_pressed)
 	btn_append.pressed.connect(_on_append_pressed)
 	run_button.pressed.connect(_on_run_pressed)
+	help_button.pressed.connect(_on_help_pressed)
 	btn_backspace.pressed.connect(_remove_last_cmd)
 	robot.action_completed.connect(_on_action_completed)
 	robot.hit_wall.connect(_on_hit_wall)
@@ -447,74 +449,177 @@ func _build_standard_ui() -> void:
 	_bottom_palette.set_meta("buttons_hbox", bp_hbox)
 
 # ── Help UI ────────────────────────────────────────────────────────────────────
+# This must be at the TOP level of the script, NOT inside _build_help_ui()
+func _make_help_row(entry: Array) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+
+	var tex_rect := TextureRect.new()
+	tex_rect.custom_minimum_size = Vector2(36, 36)
+	tex_rect.size                = Vector2(36, 36)
+	tex_rect.stretch_mode        = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tex_rect.expand_mode         = TextureRect.EXPAND_IGNORE_SIZE
+	tex_rect.clip_contents       = true
+	if ResourceLoader.exists(entry[0]):
+		tex_rect.texture = load(entry[0])
+	row.add_child(tex_rect)
+
+	var text_col := VBoxContainer.new()
+	text_col.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	row.add_child(text_col)
+
+	var name_lbl := Label.new()
+	name_lbl.text = entry[1]
+	name_lbl.add_theme_font_size_override("font_size", 11)
+	name_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.2))
+	text_col.add_child(name_lbl)
+
+	var desc_lbl := Label.new()
+	desc_lbl.text = entry[2]
+	desc_lbl.add_theme_font_size_override("font_size", 10)
+	desc_lbl.add_theme_color_override("font_color", Color(0.75, 0.75, 0.75))
+	text_col.add_child(desc_lbl)
+
+	return row
+	
 func _build_help_ui() -> void:
-	var ui_layer = $UI
-	_help_button = Button.new()
-	_help_button.text = "?"
-	_help_button.custom_minimum_size = Vector2(36, 36)
-	_help_button.anchor_left = 1.0; _help_button.anchor_right  = 1.0
-	_help_button.anchor_top  = 0.5; _help_button.anchor_bottom = 0.5
-	_help_button.offset_left = -50.0; _help_button.offset_right  = -14.0
-	_help_button.offset_top  = -18.0; _help_button.offset_bottom =  18.0
-	_help_button.add_theme_font_size_override("font_size", 20)
-	ui_layer.add_child(_help_button)
-	_help_button.pressed.connect(_on_help_pressed)
+	var canvas := CanvasLayer.new()
+	canvas.name  = "HelpCanvas"
+	canvas.layer = 100
+	add_child(canvas)
+
+	var overlay := ColorRect.new()
+	overlay.name         = "HelpOverlay"
+	overlay.color        = Color(0, 0, 0, 0.55)
+	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
+	overlay.visible      = false
+	canvas.add_child(overlay)
 
 	_help_panel = PanelContainer.new()
-	_help_panel.anchor_left = 1.0; _help_panel.anchor_right  = 1.0
-	_help_panel.anchor_top  = 0.5; _help_panel.anchor_bottom = 0.5
-	_help_panel.offset_left = -310.0; _help_panel.offset_right = -52.0
-	_help_panel.offset_top  = -200.0; _help_panel.offset_bottom = 200.0
+	_help_panel.anchor_left   = 0.5
+	_help_panel.anchor_right  = 0.5
+	_help_panel.anchor_top    = 0.5
+	_help_panel.anchor_bottom = 0.5
+	_help_panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	_help_panel.grow_vertical   = Control.GROW_DIRECTION_BOTH
+
 	var style := StyleBoxFlat.new()
-	style.bg_color     = Color(0.10, 0.10, 0.16, 0.97)
-	style.border_color = Color(0.40, 0.40, 0.70, 1.0)
-	for side in ["left","right","top","bottom"]:
-		style.set("border_width_" + side, 2)
-	style.corner_radius_top_left = 6; style.corner_radius_top_right    = 6
-	style.corner_radius_bottom_left = 6; style.corner_radius_bottom_right = 6
+	style.bg_color               = Color(0.10, 0.10, 0.16, 1.0)
+	style.border_width_left      = 2
+	style.border_width_right     = 2
+	style.border_width_top       = 2
+	style.border_width_bottom    = 2
+	style.border_color           = Color(0.30, 0.60, 0.90, 1.0)
+	style.corner_radius_top_left     = 12
+	style.corner_radius_top_right    = 12
+	style.corner_radius_bottom_left  = 12
+	style.corner_radius_bottom_right = 12
 	_help_panel.add_theme_stylebox_override("panel", style)
+	overlay.add_child(_help_panel)
+
 	var margin := MarginContainer.new()
-	for side in ["left","right","top","bottom"]:
-		margin.add_theme_constant_override("margin_" + side, 12 if side in ["left","right"] else 10)
+	margin.add_theme_constant_override("margin_left",   20)
+	margin.add_theme_constant_override("margin_right",  20)
+	margin.add_theme_constant_override("margin_top",    16)
+	margin.add_theme_constant_override("margin_bottom", 16)
 	_help_panel.add_child(margin)
+
 	var vbox := VBoxContainer.new()
-	vbox.add_theme_constant_override("separation", 6)
+	vbox.add_theme_constant_override("separation", 8)
 	margin.add_child(vbox)
-	var title := Label.new(); title.text = "Commands"
-	title.add_theme_font_size_override("font_size", 16)
-	title.add_theme_color_override("font_color", Color(0.7, 0.8, 1.0))
+
+	var title := Label.new()
+	title.text = "HOW TO PLAY"
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.4, 0.8, 1.0))
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
+
 	vbox.add_child(HSeparator.new())
-	for entry in [
-		["↑  ↓  ←  →", "Move (slide until wall)."],
-		["⚔  ATTACK",   "Break block ahead (−1 HP)."],
-		["↺  LOOP ×3",  "Repeat action 3×, 1 slot."],
-		["&&  APPEND",  "Chain 2 actions, 1 slot."],
-		["↺ REPEAT-IF", "Repeat N× with if/else."],
-	]:
-		var row := VBoxContainer.new(); row.add_theme_constant_override("separation", 2)
-		vbox.add_child(row)
-		var cl := Label.new(); cl.text = entry[0]
-		cl.add_theme_font_size_override("font_size", 14)
-		cl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
-		row.add_child(cl)
-		var dl := Label.new(); dl.text = entry[1]
-		dl.add_theme_font_size_override("font_size", 12)
-		dl.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
-		dl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		row.add_child(dl)
-		var sp := Control.new(); sp.custom_minimum_size = Vector2(0, 4)
-		vbox.add_child(sp)
-	var close_btn := Button.new(); close_btn.text = "Close"
+
+	# Two column layout
+	var columns := HBoxContainer.new()
+	columns.add_theme_constant_override("separation", 20)
+	vbox.add_child(columns)
+
+	# ── Left column — moves ───────────────────────────────────────────────────
+	var left_col := VBoxContainer.new()
+	left_col.add_theme_constant_override("separation", 8)
+	left_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.add_child(left_col)
+
+	var left_title := Label.new()
+	left_title.text = "COMMANDS"
+	left_title.add_theme_font_size_override("font_size", 12)
+	left_title.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0))
+	left_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	left_col.add_child(left_title)
+
+	left_col.add_child(HSeparator.new())
+
+	var move_entries : Array = [
+		["res://assets/UI/UP.png",     "Move Up",    "Slide upward."],
+		["res://assets/UI/DOWN.png",   "Move Down",  "Slide downward."],
+		["res://assets/UI/LEFT.png",   "Move Left",  "Slide left."],
+		["res://assets/UI/RIGHT.png",  "Move Right", "Slide right."],
+		["res://assets/UI/ATTACK.png", "Attack",     "Break block in front."],
+		["res://assets/UI/LOOP.png",   "Loop",       "Repeat N times."],
+		["res://assets/UI/APPEND.png", "Append",     "Chain two actions."],
+	]
+
+	for entry in move_entries:
+		left_col.add_child(_make_help_row(entry))
+
+	# ── Divider ───────────────────────────────────────────────────────────────
+	var divider := VSeparator.new()
+	columns.add_child(divider)
+
+	# ── Right column — block types ────────────────────────────────────────────
+	var right_col := VBoxContainer.new()
+	right_col.add_theme_constant_override("separation", 8)
+	right_col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columns.add_child(right_col)
+
+	var right_title := Label.new()
+	right_title.text = "BLOCK TYPES"
+	right_title.add_theme_font_size_override("font_size", 12)
+	right_title.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0))
+	right_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	right_col.add_child(right_title)
+
+	right_col.add_child(HSeparator.new())
+
+	var block_entries : Array = [
+		["res://assets/Blocks/collapsible-block.png", "Box",  		  "Break it with ATTACK."],
+		["res://assets/Blocks/even-block.png",        "Even Block",   "Open on even actions."],
+		["res://assets/Blocks/odd-block.png",         "Odd Block",    "Open on odd actions."],
+		["res://assets/Blocks/lock-switch-off.png",   "Switch",       "Step on to open lock."],
+		["res://assets/Blocks/lock-off.png",    	  "Lock",         "Opens when switch hit."],
+	]
+
+	for entry in block_entries:
+		right_col.add_child(_make_help_row(entry))
+
+	vbox.add_child(HSeparator.new())
+
+	var close_btn := Button.new()
+	close_btn.text = "CLOSE"
+	close_btn.custom_minimum_size = Vector2(100, 32)
 	close_btn.add_theme_font_size_override("font_size", 13)
-	close_btn.pressed.connect(func(): _help_panel.visible = false)
-	vbox.add_child(close_btn)
-	_help_panel.visible = false
-	ui_layer.add_child(_help_panel)
+	close_btn.pressed.connect(func(): overlay.visible = false)
+	var center := CenterContainer.new()
+	center.add_child(close_btn)
+	vbox.add_child(center)
+	
+	
 
 func _on_help_pressed() -> void:
-	_help_panel.visible = not _help_panel.visible
+	var canvas = get_node_or_null("HelpCanvas")
+	if canvas:
+		var overlay = canvas.get_node_or_null("HelpOverlay")
+		if overlay:
+			overlay.visible = not overlay.visible
 
 # ── Level loading ──────────────────────────────────────────────────────────────
 func _load_level(index: int) -> void:
