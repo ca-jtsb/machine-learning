@@ -26,7 +26,7 @@ const CMD_ASSETS : Dictionary = {
 }
 
 # ── Colors ─────────────────────────────────────────────────────────────────────
-const COLOR_NORMAL  : Color = Color(0.95, 0.55, 0.05, 0.85)   # Orange (semi-transparent)
+const COLOR_NORMAL  : Color = Color("#00CCFF")   # Orange (semi-transparent)
 const COLOR_HIGHLIGHT : Color = Color(1.0, 0.85, 0.0, 1.0)    # Bright yellow-gold
 const COLOR_TEXT_NORMAL : Color = Color.WHITE
 const COLOR_TEXT_HIGHLIGHT : Color = Color(0.15, 0.15, 0.15, 1.0)  # Dark text on bright bg
@@ -88,7 +88,7 @@ func _update_label() -> void:
 	_base_style.border_width_right = 2
 	_base_style.border_width_top = 2
 	_base_style.border_width_bottom = 2
-	_base_style.border_color = Color(0.5, 0.25, 0.0, 1.0)
+	_base_style.border_color = Color("#0C9713")
 	
 	add_theme_stylebox_override("normal",  _base_style.duplicate())
 	add_theme_stylebox_override("hover",   _base_style.duplicate())

@@ -44,8 +44,8 @@ const COND_LABELS  : Array[String] = ["free",     "obstacle"]
 const ACT_OPTIONS  : Array[String] = ["move_up",  "move_down", "move_left", "move_right", "attack"]
 const ACT_LABELS   : Array[String] = ["MOVE UP ↑",        "MOVE DOWN ↓",         "MOVE LEFT ←",         "MOVE RIGHT →",           "⚔"]
 
-const COLOR_OUTER : Color = Color(0.95, 0.55, 0.05, 1.0)
-const COLOR_INNER : Color = Color(0.80, 0.42, 0.02, 1.0)
+const COLOR_OUTER : Color = Color(0.1333, 0.9294, 0.1725, 1.0)
+const COLOR_INNER : Color = Color(0.0627, 0.7569, 0.0980, 1.0)
 const COLOR_TEXT  : Color = Color(1.0,  1.0,  1.0,  1.0)
 const COLOR_VAL   : Color = Color(1.0,  1.0,  0.5,  1.0)
 const COLOR_AND   : Color = Color(0.4,  0.9,  1.0,  1.0)

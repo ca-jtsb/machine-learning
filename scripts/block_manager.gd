@@ -92,6 +92,37 @@ func _add_sprite(parent: Node2D, tex_path: String, node_name: String = "Tex", st
 	parent.add_child(s)
 	return s
 
+
+# ── Helper: Add centered, color-coded index label (bottom-right corner) ─────
+# ── Helper: Add color-coded circular badge (bottom-right corner) ─────────────
+func _add_mapping_label(parent: Node2D, index: int) -> void:
+	# Define distinct colors for each index (cycle through if > 6)
+	var colors : Array[Color] = [
+		Color(0.3, 0.8, 1.0),   # Cyan for index 1
+		Color(1.0, 0.4, 0.9),   # Magenta for index 4
+
+	]
+	var badge_color : Color = colors[index % colors.size()]
+	
+	# Small circular badge (bottom-right corner)
+	var badge := Panel.new()
+	badge.name = "IndexBadge"
+	badge.size = Vector2(20, 20)
+	badge.position = Vector2(TILE_SIZE - 24, TILE_SIZE - 24)  # Bottom-right
+	badge.z_index = 10
+	
+	var badge_style := StyleBoxFlat.new()
+	badge_style.bg_color = badge_color * Color(1.0, 1.0, 1.0, 0.95)  # Slightly transparent
+	badge_style.border_color = Color.WHITE
+	badge_style.border_width_bottom = 2
+	badge_style.border_width_top = 2
+	badge_style.border_width_left = 2
+	badge_style.border_width_right = 2
+	for corner in ["top_left", "top_right", "bottom_left", "bottom_right"]:
+		badge_style.set("corner_radius_" + corner, 10)  # Perfect circle
+	badge.add_theme_stylebox_override("panel", badge_style)
+	parent.add_child(badge)
+	
 # ── Floor layer ────────────────────────────────────────────────────────────────
 # Spawns a static floor tile at every walkable cell:
 #   - all floor_cells (plain walkable ground)
@@ -198,9 +229,12 @@ func _spawn_button(cell: Vector2i, idx: int) -> void:
 	_add_sprite(c, TEX_BUTTON_OFF, "TexOff", true)
 	_add_sprite(c, TEX_BUTTON_ON,  "TexOn",  false)
 
+	# ── INDEX LABEL (bottom-right corner) ──────────────────────────────────
+	_add_mapping_label(c, idx)
+
 	add_child(c)
 	_nodes[cell] = c
-
+	
 func _spawn_lock(cell: Vector2i, idx: int) -> void:
 	var c := Node2D.new()
 	c.position = _cell_pos(cell)
@@ -209,11 +243,16 @@ func _spawn_lock(cell: Vector2i, idx: int) -> void:
 	# Locked state (visible by default)
 	_add_sprite(c, TEX_LOCK, "TexLocked", true)
 	
-	# Unlocked/Open state (hidden by default) ← ADD THESE 3 LINES
+	# Unlocked/Open state (hidden by default)
 	_add_sprite(c, TEX_LOCK_OPEN, "TexUnlocked", false)
+
+	# ── INDEX LABEL (bottom-right corner) ──────────────────────────────────
+	_add_mapping_label(c, idx)
 
 	add_child(c)
 	_nodes[cell] = c
+
+
 # ── Public API ─────────────────────────────────────────────────────────────────
 func is_blocked(cell: Vector2i) -> bool:
 	if _data == null: return false

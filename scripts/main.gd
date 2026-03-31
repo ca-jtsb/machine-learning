@@ -249,13 +249,13 @@ const PALETTE_BUTTONS : Array = [
 	# [ key,      label,          texture_path,                  hover_color (fallback only) ]
 	# Set texture_path to "res://assets/UI/yourfile.png" to use an icon asset.
 	# Leave "" to show a plain orange text button instead.
-	[ "up",      "Move Up ↑",    "res://assets/UI/UP.png",      Color(1.0, 0.70, 0.20, 1.0) ],
-	[ "down",    "Move Down ↓",  "res://assets/UI/DOWN.png",    Color(1.0, 0.70, 0.20, 1.0) ],
-	[ "left",    "Move Left ←",  "res://assets/UI/LEFT.png",    Color(1.0, 0.70, 0.20, 1.0) ],
-	[ "right",   "Move Right →", "res://assets/UI/RIGHT.png",   Color(1.0, 0.70, 0.20, 1.0) ],
-	[ "attack",  "⚔ ATTACK",     "res://assets/UI/ATTACK.png",                            Color(1.0, 0.70, 0.20, 1.0) ],
-	[ "loop",    "↺ LOOP",       "res://assets/UI/LOOP.png",                            Color(1.0, 0.70, 0.20, 1.0) ],
-	[ "append",  "&& APPEND",    "res://assets/UI/APPEND.png",                            Color(1.0, 0.70, 0.20, 1.0) ],
+	[ "up",      "Move Up ↑",    "res://assets/UI/UP.png",      Color(0.1333, 0.9294, 0.1725, 1.0) ],
+	[ "down",    "Move Down ↓",  "res://assets/UI/DOWN.png",    Color(0.1333, 0.9294, 0.1725, 1.0) ],
+	[ "left",    "Move Left ←",  "res://assets/UI/LEFT.png",    Color(0.1333, 0.9294, 0.1725, 1.0) ],
+	[ "right",   "Move Right →", "res://assets/UI/RIGHT.png",   Color(0.1333, 0.9294, 0.1725, 1.0) ],
+	[ "attack",  "⚔ ATTACK",     "res://assets/UI/ATTACK.png",                            Color(0.1333, 0.9294, 0.1725, 1.0) ],
+	[ "loop",    "↺ LOOP",       "res://assets/UI/LOOP.png",                            Color(0.1333, 0.9294, 0.1725, 1.0) ],
+	[ "append",  "&& APPEND",    "res://assets/UI/APPEND.png",                            Color(0.1333, 0.9294, 0.1725, 1.0) ],
 ]
 
 # ── State ──────────────────────────────────────────────────────────────────────
@@ -351,7 +351,7 @@ func _build_if_else_workspace() -> void:
 	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	var style := StyleBoxFlat.new()
 	style.bg_color     = Color(0.08, 0.08, 0.12, 1.0)
-	style.border_color = Color(0.95, 0.55, 0.05, 1.0)
+	style.border_color = Color(0.1333, 0.9294, 0.1725, 1.0)
 	for side in ["left","right","top","bottom"]:
 		style.set("border_width_" + side, 2)
 	panel.add_theme_stylebox_override("panel", style)
@@ -391,7 +391,7 @@ func _build_standard_ui() -> void:
 	_std_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	var std_style := StyleBoxFlat.new()
 	std_style.bg_color     = Color(0.08, 0.08, 0.12, 1.0)
-	std_style.border_color = Color(0.95, 0.55, 0.05, 1.0)
+	std_style.border_color = Color(0.1333, 0.9294, 0.1725, 1.0)
 	for side in ["left","right","top","bottom"]:
 		std_style.set("border_width_" + side, 2)
 	_std_panel.add_theme_stylebox_override("panel", std_style)
@@ -1263,7 +1263,7 @@ func _make_palette_btn(label: String, tex_path: String, _hover_col: Color) -> Bu
 	btn.button_down.connect(func():
 		var tw := btn.create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		tw.tween_property(tex_rect, "scale", pressed_scale, 0.07)
-		glow_sty.border_color = Color(1.0, 0.5, 0.1, 1.0)   # orange tint on press
+		glow_sty.border_color = Color(0, 0, 0, 0)   # orange tint on press
 	)
 	btn.button_up.connect(func():
 		# Return to hover scale (mouse is still over the button)
@@ -1357,9 +1357,13 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 					"box_position": Vector2(200, 380)
 				},
 				{
-					"text": "Here is where the sequence of moves will appear once you start choosing the actions. [b]Right click[/b] on the move to delete.",
+					"text": "Here is the command panel where the sequence of moves will appear once you start choosing the actions. [b]Right click[/b] on the move to delete.",
 					"pointer_pos": Vector2(750, 120),  # points at the workspace panel
 					"box_position": Vector2(350, 100)
+				},
+				{
+					"text": "You can [b]Right-click[/b] to remove an action from the command panel",
+					"pointer_pos": null,
 				},
 				{
 					"text": "When you are ready, press [b]RUN PROGRAM[/b] to activate the sequence you just created.",
@@ -1653,14 +1657,14 @@ func _show_loop_count_popup() -> void:
 		btn.custom_minimum_size = Vector2(35, 35)
 		btn.add_theme_font_size_override("font_size", 14)
 		var btn_style := StyleBoxFlat.new()
-		btn_style.bg_color = Color(0.95, 0.55, 0.05, 1.0)
+		btn_style.bg_color = Color(0.1333, 0.9294, 0.1725, 1.0)
 		btn_style.corner_radius_top_left = 5
 		btn_style.corner_radius_top_right = 5
 		btn_style.corner_radius_bottom_left = 5
 		btn_style.corner_radius_bottom_right = 5
 		btn.add_theme_stylebox_override("normal", btn_style)
 		var btn_hover := btn_style.duplicate()
-		btn_hover.bg_color = Color(1.0, 0.65, 0.15, 1.0)
+		btn_hover.bg_color = Color(0.2431, 0.9373, 0.2745, 1.0)
 		btn.add_theme_stylebox_override("hover", btn_hover)
 		btn.add_theme_color_override("font_color", Color.WHITE)
 		btn.pressed.connect(func():
