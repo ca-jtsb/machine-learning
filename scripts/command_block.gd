@@ -88,7 +88,7 @@ func _update_label() -> void:
 	_base_style.border_width_right = 2
 	_base_style.border_width_top = 2
 	_base_style.border_width_bottom = 2
-	_base_style.border_color = Color("#0C9713")
+	_base_style.border_color = Color("#00A7D1")
 	
 	add_theme_stylebox_override("normal",  _base_style.duplicate())
 	add_theme_stylebox_override("hover",   _base_style.duplicate())

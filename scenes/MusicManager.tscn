@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://bgl82vmpkr716"]
+
+[ext_resource type="AudioStream" uid="uid://meoplpnvywa4" path="res://assets/audio/main-bgm.mp3" id="1_k17rw"]
+
+[node name="Audio" type="AudioStreamPlayer2D" unique_id=1853117259]
+stream = ExtResource("1_k17rw")
+volume_db = -10.116
+autoplay = true

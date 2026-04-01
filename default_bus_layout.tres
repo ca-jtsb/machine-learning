@@ -1,0 +1,10 @@
+[gd_resource type="AudioBusLayout" format=3 uid="uid://b6dyh23gd0oh8"]
+
+[resource]
+bus/0/send = &"BGM"
+bus/1/name = &"BGM"
+bus/1/solo = false
+bus/1/mute = false
+bus/1/bypass_fx = false
+bus/1/volume_db = -10.0691595
+bus/1/send = &"Master"

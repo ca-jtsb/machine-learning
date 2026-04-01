@@ -42,24 +42,24 @@ const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
 # compound_condition / compound_then / compound_else keys enable && in those slots.
 const BLUEPRINTS : Dictionary = {
 	"Level 7 - The Algorithm": [
-		{ "repeat_count": 6,  "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
-		{ "repeat_count": 12, "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
+		{ "repeat_count": 1,  "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
+		{ "repeat_count": 1, "check_direction": "?", "check_condition": "?", "then_action": "?", "else_action": "?" },
 	],
 	"Level 8": [
-		{ "repeat_count": 35, "check_direction": "RIGHT", "check_condition": "is_obstacle", "then_action": "attack", "else_action": "move_right" },
+		{ "repeat_count": 1, "check_direction": "RIGHT", "check_condition": "is_obstacle", "then_action": "attack", "else_action": "move_right" },
 	],
 
 	# ── Level 9: ALL blank — player fills direction, condition, and actions ──────
 	"Level 9": [
 		{
-			"repeat_count": 8,
-			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 4,
-			"check_direction": "UP", "check_condition": "is_free",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
@@ -106,26 +106,26 @@ const BLUEPRINTS : Dictionary = {
 	# If your .tres uses "Level 10", the entry above handles it. Keep both.
 	"Final Level": [
 		{
-			"repeat_count": 3,
-			"check_direction": "RIGHT", "check_condition": "is_free",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 4,
-			"check_direction": "UP", "check_condition": "is_free",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 10,
-			"check_direction": "RIGHT", "check_condition": "is_obstacle",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 6,
-			"check_direction": "DOWN", "check_condition": "is_free",
+			"repeat_count": 1,
+			"check_direction": "?", "check_condition": "?",
 			"then_action": "?",
 			"else_action": "?"
 		},
@@ -193,7 +193,7 @@ const ALT_SOLUTIONS : Dictionary = {
 				"pointer_pos": null,
 			},
 			{
-				"text": "Instead of two separate blocks, check TWO conditions in one:\n[b]RIGHT == isObstacle && UP == isFree[/b]",
+				"text": "Instead of two separate blocks, check TWO conditions in one:\n[b]RIGHT == obstacle && UP == free[/b]",
 				"pointer_pos": Vector2(800, 90),   # Points at IF condition dropdowns
 				"box_position": "near_pointer",
 			},
@@ -353,7 +353,7 @@ func _build_if_else_workspace() -> void:
 	panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	var style := StyleBoxFlat.new()
 	style.bg_color     = Color(0.08, 0.08, 0.12, 1.0)
-	style.border_color = Color(0.1333, 0.9294, 0.1725, 1.0)
+	style.border_color = Color("#00A7D1")
 	for side in ["left","right","top","bottom"]:
 		style.set("border_width_" + side, 2)
 	panel.add_theme_stylebox_override("panel", style)
@@ -393,7 +393,7 @@ func _build_standard_ui() -> void:
 	_std_panel.grow_vertical = Control.GROW_DIRECTION_BOTH
 	var std_style := StyleBoxFlat.new()
 	std_style.bg_color     = Color(0.08, 0.08, 0.12, 1.0)
-	std_style.border_color = Color(0.1333, 0.9294, 0.1725, 1.0)
+	std_style.border_color = Color("#00A7D1")
 	for side in ["left","right","top","bottom"]:
 		std_style.set("border_width_" + side, 2)
 	_std_panel.add_theme_stylebox_override("panel", std_style)
@@ -665,7 +665,7 @@ func _reload_current_level() -> void:
 func _enter_standard_mode(data: LevelData) -> void:
 	# Hide all legacy scene panels
 	$UI/CommandPalette.visible     = false
-	$UI/WorkspacePanel.visible     = false   # MUST stay hidden — replaced by _std_panel
+	$UI/WorkspacePanel.visible     = false
 	workspace.visible              = false
 	if _if_else_panel: _if_else_panel.visible = false
 
@@ -675,10 +675,26 @@ func _enter_standard_mode(data: LevelData) -> void:
 	$UI/BackspaceButton.visible    = false
 	$UI/RunButton.visible          = true
 	$UI/ActionCounterPanel.visible = true
+	
+	# Restore standard layout
+	if count_label:
+		count_label.visible = true
+	
+	if title_label:
+		title_label.visible = true
+		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		title_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
+		title_label.add_theme_font_size_override("font_size", 14)
+	
+	# ⭐ Reset VBox alignment for standard mode
+	var vbox = $UI/ActionCounterPanel/VBoxContainer
+	if vbox:
+		vbox.alignment = BoxContainer.ALIGNMENT_BEGIN
+		vbox.add_theme_constant_override("separation", 4)
 
 	$GameWorld.position = Vector2(GRID_X_STANDARD, GRID_Y)
 	_refresh_palette(data.available_commands)
-
+	
 # ── IF-ELSE mode ───────────────────────────────────────────────────────────────
 func _enter_if_else_mode(data: LevelData) -> void:
 	# Hide Phase 1 elements
@@ -690,12 +706,27 @@ func _enter_if_else_mode(data: LevelData) -> void:
 	# Show Phase 2 elements
 	$UI/BackspaceButton.visible    = false
 	$UI/RunButton.visible          = true
-	$UI/ActionCounterPanel.visible = false
+	$UI/ActionCounterPanel.visible = true
+	
+	# ⭐ Keep count_label space but hide it
+	if count_label:
+		count_label.modulate = Color(1, 1, 1, 0)
+	
+	if title_label:
+		title_label.visible = true
+		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	
+	# ⭐ Center in the VBoxContainer
+	var vbox = $UI/ActionCounterPanel/VBoxContainer
+	if vbox:
+		vbox.alignment = BoxContainer.ALIGNMENT_CENTER
+		vbox.add_theme_constant_override("separation", 0)
+
 	if _if_else_panel: _if_else_panel.visible = true
 
 	$GameWorld.position = Vector2(GRID_X_IF_ELSE, GRID_Y)
 	_populate_blueprint(data.level_name)
-
+	
 func _populate_blueprint(level_name: String) -> void:
 	for child in _if_else_workspace.get_children():
 		child.queue_free()
@@ -1030,7 +1061,7 @@ func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
 	var hint_lbl := Label.new()
 	hint_lbl.name = "AltHintLabel"
 	hint_lbl.text = "Run the program above to continue!"
-	hint_lbl.add_theme_color_override("font_color", Color(1.0, 0.85, 0.3))
+	hint_lbl.add_theme_color_override("font_color", Color("#00A7D1"))
 	hint_lbl.add_theme_font_size_override("font_size", 13)
 	hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -1501,7 +1532,7 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 					"pointer_rotation": 70.0
 				},
 				{
-					"text": "Use [b]ATTACK[/b] to hit a box. You can also use [b]LOOP[/b] to hit it multiple times in one slot.",
+					"text": "Use [b]ATTACK[/b] to hit a box.",
 					"pointer_pos": Vector2(380, 500),   # points at the Attack button in palette
 					"pointer_rotation": 110.0,
 					"box_position": Vector2(420, 400)
