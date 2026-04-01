@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://m0xyy83fyir5"]
 
 [ext_resource type="Script" uid="uid://bu05r0n03i0qk" path="res://scripts/level_complete.gd" id="1_hhoem"]
-[ext_resource type="FontFile" uid="uid://c2548rhojq0du" path="res://fonts/PressStart2P-Regular.ttf" id="2_4x1ak"]
+[ext_resource type="FontFile" uid="uid://6vx7bd0ue071" path="res://fonts/PressStart2P-Regular.ttf" id="2_4x1ak"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hhoem"]
 bg_color = Color(0.16470589, 0.16470589, 0.2901961, 1)
@@ -22,9 +22,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -202.0
-offset_top = -63.5
+offset_top = -80.0
 offset_right = 202.0
-offset_bottom = 63.5
+offset_bottom = 80.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_hhoem")
@@ -40,6 +40,14 @@ theme_override_font_sizes/font_size = 37
 text = "Level Complete!"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="AttemptsLabel" type="Label" parent="LevelCompletePanel/VBoxContainer" unique_id=223344556]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 0.9, 1, 1)
+theme_override_fonts/font = ExtResource("2_4x1ak")
+theme_override_font_sizes/font_size = 13
+text = "Attempts: 0"
+horizontal_alignment = 1
 
 [node name="CenterContainer" type="CenterContainer" parent="LevelCompletePanel/VBoxContainer" unique_id=812026902]
 layout_mode = 2

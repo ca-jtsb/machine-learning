@@ -2,6 +2,7 @@ extends Node2D
 
 const TutorialOverlay     = preload("res://scenes/tutorial_overlay.tscn")
 const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
+const EndingScreen = preload("res://scenes/ending_screen.tscn")
 
 # ── Scene references ───────────────────────────────────────────────────────────
 @onready var robot         : Robot         = $GameWorld/Robot
@@ -34,6 +35,9 @@ const LevelCompleteScreen = preload("res://scenes/level_complete.tscn")
 	"res://levels/level_9.tres",
 	"res://levels/level_10.tres",
 ]
+
+var _attempt_counts  : Dictionary = {}   # key: display label → int
+var _current_attempt_key : String = "" 
 
 const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
 
@@ -644,6 +648,11 @@ func _load_level(index: int) -> void:
 	if title_label: title_label.text = data.level_name
 	_clear_palette_hint()
 
+	# ── Set attempt key for this level ────────────────────────────────────────
+	_current_attempt_key = data.level_name
+	if not _attempt_counts.has(_current_attempt_key):
+		_attempt_counts[_current_attempt_key] = 0
+
 	var unlock_ok : bool = (index >= IF_ELSE_UNLOCK_FROM_LEVEL)
 	_is_if_else_mode = data.use_if_else_mode and unlock_ok
 
@@ -657,7 +666,7 @@ func _load_level(index: int) -> void:
 	if index < _tutorial_seen.size() and not _tutorial_seen[index]:
 		_tutorial_seen[index] = true
 		_show_tutorial(index)
-
+		
 func _reload_current_level() -> void:
 	_load_level(current_level_index)
 
@@ -821,6 +830,7 @@ func _on_hit_wall_failure() -> void:
 	pass
 
 func _on_program_finished_if_else() -> void:
+	_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
 	is_executing = false
 	_show_failure_flash()
 	await get_tree().create_timer(1.0).timeout
@@ -831,7 +841,7 @@ func _on_program_finished_if_else() -> void:
 	current_command_index = 0
 	run_button.disabled   = false
 	robot.set_meta("level_done", false)
-
+	
 func _execute_next() -> void:
 	if current_command_index >= command_blocks.size():
 		_on_program_finished(); return
@@ -870,14 +880,12 @@ func _on_hit_wall() -> void:
 	_show_wall_hit_overlay()
 
 func _show_wall_hit_overlay() -> void:
-	# Dim panel
 	var dim := ColorRect.new()
 	dim.name = "WallHitDim"
 	dim.color = Color(0, 0, 0, 0.55)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	$UI.add_child(dim)
 
-	# Popup panel
 	var panel := PanelContainer.new()
 	panel.name = "WallHitPanel"
 	panel.anchor_left   = 0.5; panel.anchor_right  = 0.5
@@ -924,6 +932,7 @@ func _show_wall_hit_overlay() -> void:
 	retry_btn.add_theme_font_size_override("font_size", 16)
 	retry_btn.custom_minimum_size = Vector2(140, 44)
 	retry_btn.pressed.connect(func():
+		_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
 		dim.queue_free()
 		panel.queue_free()
 		_hit_wall = false
@@ -935,10 +944,12 @@ func _show_wall_hit_overlay() -> void:
 		run_button.disabled = false
 	)
 	vbox.add_child(retry_btn)
-
+	
 func _on_program_finished() -> void:
+	if not _level_complete:
+		_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
 	is_executing = false
-	_clear_highlights()  # Keep this for safety
+	_clear_highlights()
 	if _level_complete: return
 	_show_failure_flash()
 	await get_tree().create_timer(1.0).timeout
@@ -951,12 +962,9 @@ func _on_program_finished() -> void:
 	run_button.disabled   = false
 	_update_counter()
 	_clear_palette_hint()
-	
-	# ⭐ Extra safety: clear any stuck highlights
 	for cmd in command_blocks:
 		if is_instance_valid(cmd):
-			cmd.set_highlighted(false)
-			
+			cmd.set_highlighted(false)		
 			
 # ── Level complete flow ────────────────────────────────────────────────────────
 func _on_level_complete() -> void:
@@ -968,7 +976,6 @@ func _on_level_complete() -> void:
 
 	# During alt demo: reveal Continue button then reset so player can run again
 	if _showing_alt:
-		# Reveal the Continue button now that they've seen the alt work
 		var cont = _if_else_workspace.get_node_or_null("AltContinueBtn")
 		if cont: cont.visible = true
 		var hint = _if_else_workspace.get_node_or_null("AltHintLabel")
@@ -982,12 +989,18 @@ func _on_level_complete() -> void:
 		run_button.disabled = false
 		return
 
-	# Check if this level has an alt-solution to show before proceeding
+	# ⭐ FIRST check for alt solutions (even on final level)
 	if ALT_SOLUTIONS.has(_current_level_name):
 		_show_alt_solution_flow(_current_level_name)
 	else:
-		_show_level_complete_popup()
-
+		# ⭐ Then check if this is the final level
+		var is_final_level : bool = (current_level_index >= levels.size() - 1)
+		if is_final_level:
+			await get_tree().create_timer(0.5).timeout
+			_show_ending_screen()
+		else:
+			_show_level_complete_popup()
+				
 # ── Alt-solution flow ──────────────────────────────────────────────────────────
 func _show_alt_solution_flow(level_name: String) -> void:
 	var alt_info : Dictionary = ALT_SOLUTIONS[level_name]
@@ -1027,21 +1040,26 @@ func _show_assistant_overlay(hint_data: Variant, on_done: Callable) -> void:
  
 
 func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
-	_showing_alt = true   # suppress level_complete popup while alt is running
+	_showing_alt = true
 
-	# Clear previous blueprint widgets
+	# ⭐ Check if this is the final level's alt solution
+	var is_final_alt : bool = (alt_key == "Final Level - Alt" or alt_key == "Level 10 - Alt")
+
+	# ── Set attempt key for the alt solution ──────────────────────────────────
+	_current_attempt_key = alt_key
+	if not _attempt_counts.has(_current_attempt_key):
+		_attempt_counts[_current_attempt_key] = 0
+
 	for child in _if_else_workspace.get_children():
 		child.queue_free()
 	_if_else_blocks.clear()
 
-	# Load alt blueprint blocks (all pre-filled, read-only)
 	var blueprint : Array = BLUEPRINTS.get(alt_key, [])
 	for block_def in blueprint:
 		var widget := _make_widget_from_def(block_def)
 		_if_else_workspace.add_child(widget)
 		_if_else_blocks.append(widget)
 
-	# Separator + Continue button — hidden until player runs the alt at least once
 	var sep := HSeparator.new()
 	sep.name = "AltSeparator"
 	_if_else_workspace.add_child(sep)
@@ -1051,10 +1069,13 @@ func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
 	continue_btn.text    = "▶  Continue to Next Level"
 	continue_btn.add_theme_font_size_override("font_size", 15)
 	continue_btn.custom_minimum_size = Vector2(0, 44)
-	continue_btn.visible = false   # hidden until alt is run successfully
+	continue_btn.visible = false
 	continue_btn.pressed.connect(func():
 		_showing_alt = false
-		on_done.call()
+		if is_final_alt:
+			_show_ending_screen()  # ⭐ Show ending screen for final level alt
+		else:
+			on_done.call()  # Show level complete popup for other levels
 	)
 	_if_else_workspace.add_child(continue_btn)
 
@@ -1067,29 +1088,28 @@ func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
 	hint_lbl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_if_else_workspace.add_child(hint_lbl)
 
-	# Ensure panel is visible (handles case where level was standard-mode)
 	if _if_else_panel and not _if_else_panel.visible:
 		_if_else_panel.visible = true
 		$GameWorld.position = Vector2(GRID_X_IF_ELSE, GRID_Y)
 
-	# Reset the level so player can watch (or try) the alt solution
 	var data : LevelData = load(levels[current_level_index]) as LevelData
 	block_manager.load_level(data)
 	robot.reset_to(data.player_start)
 	robot.set_meta("level_done", false)
 	_level_complete = false
 	run_button.disabled = false
-	# Player is now free to press RUN as many times as they like.
-	# When ready, they click "Continue to Next Level" above.
-
+	
+	
 func _show_level_complete_popup() -> void:
 	var popup = LevelCompleteScreen.instantiate()
 	$UI.add_child(popup)
+	var attempts : int = _attempt_counts.get(_current_attempt_key, 0) as int
+	popup.set_attempts(_current_attempt_key, attempts)
 	popup.next_level_pressed.connect(func():
 		popup.queue_free()
 		current_level_index += 1
 		_load_level(current_level_index))
-
+		
 func _show_win_screen() -> void:
 	print("ALL LEVELS COMPLETE!")
 
@@ -1543,6 +1563,12 @@ func _get_tutorial_steps(level_index: int) -> Array[Dictionary]:
 					"pointer_rotation": 110.0,
 					"box_position": Vector2(520, 400)
 				},
+				{
+					"text": "You can try to Loop directional commands, but why would you need to, right? The robot slides until it hits a wall.",
+					"pointer_pos": Vector2(480, 500),   # points at the Attack button in palette
+					"pointer_rotation": 110.0,
+					"box_position": Vector2(520, 400)
+				},
 			]
 
 		# ── LEVEL 3 (index 2) ─────────────────────────────────────────────────
@@ -1874,3 +1900,9 @@ func _update_action_button_visuals() -> void:
 				sty_hover.border_color = Color(1.0, 0.65, 0.15, 1.0)
 				child.add_theme_stylebox_override("hover", sty_hover)
 				child.add_theme_stylebox_override("pressed", sty_hover)
+
+func _show_ending_screen() -> void:
+	var ending = EndingScreen.instantiate()
+	$UI.add_child(ending)
+	ending.setup(_attempt_counts)  # Pass the attempt counts dictionary
+	
