@@ -24,13 +24,13 @@ const EndingScreen = preload("res://scenes/ending_screen.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	"res://levels/level_1.tres",
-	"res://levels/level_2.tres",
-	"res://levels/level_3.tres",
-	"res://levels/level_4.tres",
-	"res://levels/level_5.tres",
-	"res://levels/level_6.tres",
-	"res://levels/level_7.tres",
+	#"res://levels/level_1.tres",
+	#"res://levels/level_2.tres",
+	#"res://levels/level_3.tres",
+	#"res://levels/level_4.tres",
+	#"res://levels/level_5.tres",
+	#"res://levels/level_6.tres",
+	#"res://levels/level_7.tres",
 	"res://levels/level_8.tres",
 	"res://levels/level_9.tres",
 	"res://levels/level_10.tres",
@@ -832,12 +832,15 @@ func _on_hit_wall_failure() -> void:
 	pass
 
 func _on_program_finished_if_else() -> void:
-	# Only count as a failed attempt — this function is only reached when the
-	# program finished WITHOUT the robot reaching the exit.
-	# (Success is handled by _on_level_complete.)
-	if _loading_alt_blueprint: return 
-	if _level_complete: return   # safety guard — should not happen, but skip if it does
-	_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
+	# This function is called when the program finishes executing
+	# If _level_complete is false, it means the robot did NOT reach the exit
+	if _loading_alt_blueprint: return
+	
+	# Only count as failure if level wasn't completed
+	if not _level_complete:
+		_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
+		print("DEBUG: Counted IF-ELSE failure for ", _current_attempt_key, " -> ", _attempt_counts[_current_attempt_key])
+	
 	is_executing = false
 	_show_failure_flash()
 	await get_tree().create_timer(1.0).timeout
@@ -848,7 +851,7 @@ func _on_program_finished_if_else() -> void:
 	current_command_index = 0
 	run_button.disabled   = false
 	robot.set_meta("level_done", false)
-	
+		
 func _execute_next() -> void:
 	if current_command_index >= command_blocks.size():
 		_on_program_finished(); return

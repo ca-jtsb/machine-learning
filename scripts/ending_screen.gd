@@ -14,7 +14,7 @@ const ENDING_DIALOGUE : Array[Dictionary] = [
 
 # ── Phase boundaries (zero-based level indices) ────────────────────────────────
 const PHASE1_NAMES : Array[String] = [
-	"Level 1", "Level 2", "Level 3", "Level 4", "Level 5", "Level 6"
+	"Level 1 - Tutorial", "Level 2 - Breakables", "Level 3", "Level 4", "Level 5", "Level 6"
 ]
 const PHASE2_NAMES : Array[String] = [
 	"Level 7 - The Algorithm", "Level 8", "Level 9", "Level 9 - Alt",
