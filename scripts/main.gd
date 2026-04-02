@@ -24,15 +24,15 @@ const EndingScreen = preload("res://scenes/ending_screen.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	#"res://levels/level_1.tres",
-	#"res://levels/level_2.tres",
-	#"res://levels/level_3.tres",
-	#"res://levels/level_4.tres",
-	#"res://levels/level_5.tres",
-	#"res://levels/level_6.tres",
-	#"res://levels/level_7.tres",
-	#"res://levels/level_8.tres",
-	#"res://levels/level_9.tres",
+	"res://levels/level_1.tres",
+	"res://levels/level_2.tres",
+	"res://levels/level_3.tres",
+	"res://levels/level_4.tres",
+	"res://levels/level_5.tres",
+	"res://levels/level_6.tres",
+	"res://levels/level_7.tres",
+	"res://levels/level_8.tres",
+	"res://levels/level_9.tres",
 	"res://levels/level_10.tres",
 ]
 
@@ -137,20 +137,20 @@ const BLUEPRINTS : Dictionary = {
 	],
 	"Final Level - Alt": [
 		{
-			"repeat_count": 7,
+			"repeat_count": 1,
 			"check_direction": "RIGHT", "check_condition": "is_obstacle",
 			"compound_condition": true, "check_direction2": "UP", "check_condition2": "is_free",
 			"then_action": "move_up",
 			"else_action": "move_right"
 		},
 		{
-			"repeat_count": 10,
+			"repeat_count": 1,
 			"check_direction": "RIGHT", "check_condition": "is_obstacle",
 			"then_action": "?",
 			"else_action": "?"
 		},
 		{
-			"repeat_count": 5,
+			"repeat_count": 1,
 			"check_direction": "DOWN", "check_condition": "is_free",
 			"then_action": "move_down",
 			"else_action": "move_left"

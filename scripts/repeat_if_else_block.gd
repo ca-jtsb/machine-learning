@@ -48,7 +48,7 @@ const COLOR_OUTER : Color = Color("#00A7D1")
 const COLOR_INNER : Color = Color("#00CCFF")
 const COLOR_TEXT  : Color = Color(1.0,  1.0,  1.0,  1.0)
 const COLOR_VAL   : Color = Color(1.0,  1.0,  0.5,  1.0)
-const COLOR_AND   : Color = Color(0.4,  0.9,  1.0,  1.0)
+const COLOR_AND   : Color = Color(1.0,  1.0,  0.5,  1.0)
 
 var _repeat_spin : SpinBox      = null
 var _dir_opt     : OptionButton = null
