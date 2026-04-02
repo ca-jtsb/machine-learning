@@ -24,20 +24,21 @@ const EndingScreen = preload("res://scenes/ending_screen.tscn")
 
 # ── Level list ─────────────────────────────────────────────────────────────────
 @export var levels : Array[String] = [
-	"res://levels/level_1.tres",
-	"res://levels/level_2.tres",
-	"res://levels/level_3.tres",
-	"res://levels/level_4.tres",
-	"res://levels/level_5.tres",
-	"res://levels/level_6.tres",
-	"res://levels/level_7.tres",
-	"res://levels/level_8.tres",
-	"res://levels/level_9.tres",
+	#"res://levels/level_1.tres",
+	#"res://levels/level_2.tres",
+	#"res://levels/level_3.tres",
+	#"res://levels/level_4.tres",
+	#"res://levels/level_5.tres",
+	#"res://levels/level_6.tres",
+	#"res://levels/level_7.tres",
+	#"res://levels/level_8.tres",
+	#"res://levels/level_9.tres",
 	"res://levels/level_10.tres",
 ]
 
 var _attempt_counts  : Dictionary = {}   # key: display label → int
 var _current_attempt_key : String = "" 
+var _loading_alt_blueprint : bool = false
 
 const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
 
@@ -830,6 +831,11 @@ func _on_hit_wall_failure() -> void:
 	pass
 
 func _on_program_finished_if_else() -> void:
+	# Only count as a failed attempt — this function is only reached when the
+	# program finished WITHOUT the robot reaching the exit.
+	# (Success is handled by _on_level_complete.)
+	if _loading_alt_blueprint: return 
+	if _level_complete: return   # safety guard — should not happen, but skip if it does
 	_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
 	is_executing = false
 	_show_failure_flash()
@@ -932,7 +938,9 @@ func _show_wall_hit_overlay() -> void:
 	retry_btn.add_theme_font_size_override("font_size", 16)
 	retry_btn.custom_minimum_size = Vector2(140, 44)
 	retry_btn.pressed.connect(func():
-		_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
+		if not _loading_alt_blueprint:
+			_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
+		print("DEBUG: Counted wall-hit retry for ", _current_attempt_key, " -> ", _attempt_counts[_current_attempt_key])
 		dim.queue_free()
 		panel.queue_free()
 		_hit_wall = false
@@ -946,11 +954,12 @@ func _show_wall_hit_overlay() -> void:
 	vbox.add_child(retry_btn)
 	
 func _on_program_finished() -> void:
-	if not _level_complete:
-		_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
+	if _loading_alt_blueprint: return
 	is_executing = false
 	_clear_highlights()
-	if _level_complete: return
+	if _level_complete: return   # success — attempt was NOT a failure
+	_attempt_counts[_current_attempt_key] = _attempt_counts.get(_current_attempt_key, 0) + 1
+	print("DEBUG: Counted standard failure for ", _current_attempt_key, " -> ", _attempt_counts[_current_attempt_key])
 	_show_failure_flash()
 	await get_tree().create_timer(1.0).timeout
 	var data : LevelData = load(levels[current_level_index]) as LevelData
@@ -974,19 +983,17 @@ func _on_level_complete() -> void:
 	_clear_highlights()
 	robot.set_meta("level_done", true)
 
-	# During alt demo: reveal Continue button then reset so player can run again
+	# During alt demo: reveal Continue button — do NOT reset or re-enable run.
+	# The robot stays at the exit so the player sees the success clearly.
+	# Pressing Continue is the only next action available.
 	if _showing_alt:
 		var cont = _if_else_workspace.get_node_or_null("AltContinueBtn")
 		if cont: cont.visible = true
 		var hint = _if_else_workspace.get_node_or_null("AltHintLabel")
 		if hint: hint.visible = false
-		await get_tree().create_timer(0.8).timeout
-		var data : LevelData = load(levels[current_level_index]) as LevelData
-		block_manager.load_level(data)
-		robot.reset_to(data.player_start)
-		robot.set_meta("level_done", false)
-		_level_complete = false
-		run_button.disabled = false
+		# run_button stays disabled — no second attempt on alt after success
+		# _level_complete stays true — prevents _on_program_finished_if_else
+		# from counting this as a failure
 		return
 
 	# ⭐ FIRST check for alt solutions (even on final level)
@@ -1041,14 +1048,14 @@ func _show_assistant_overlay(hint_data: Variant, on_done: Callable) -> void:
 
 func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
 	_showing_alt = true
+	_loading_alt_blueprint = true
 
 	# ⭐ Check if this is the final level's alt solution
 	var is_final_alt : bool = (alt_key == "Final Level - Alt" or alt_key == "Level 10 - Alt")
 
 	# ── Set attempt key for the alt solution ──────────────────────────────────
 	_current_attempt_key = alt_key
-	if not _attempt_counts.has(_current_attempt_key):
-		_attempt_counts[_current_attempt_key] = 0
+	_attempt_counts[_current_attempt_key] = -1
 
 	for child in _if_else_workspace.get_children():
 		child.queue_free()
@@ -1066,16 +1073,17 @@ func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
 
 	var continue_btn := Button.new()
 	continue_btn.name    = "AltContinueBtn"
-	continue_btn.text    = "▶  Continue to Next Level"
+	continue_btn.text    = "▶  Finish" if is_final_alt else "▶  Continue to Next Level"
 	continue_btn.add_theme_font_size_override("font_size", 15)
 	continue_btn.custom_minimum_size = Vector2(0, 44)
 	continue_btn.visible = false
 	continue_btn.pressed.connect(func():
 		_showing_alt = false
+		_loading_alt_blueprint = false
 		if is_final_alt:
-			_show_ending_screen()  # ⭐ Show ending screen for final level alt
+			_show_ending_screen()
 		else:
-			on_done.call()  # Show level complete popup for other levels
+			on_done.call()
 	)
 	_if_else_workspace.add_child(continue_btn)
 
@@ -1092,13 +1100,16 @@ func _load_alt_blueprint(alt_key: String, on_done: Callable) -> void:
 		_if_else_panel.visible = true
 		$GameWorld.position = Vector2(GRID_X_IF_ELSE, GRID_Y)
 
+	# ⭐ CRITICAL: Reset these BEFORE loading the level
+	_level_complete = false
+	robot.set_meta("level_done", false)
+	
 	var data : LevelData = load(levels[current_level_index]) as LevelData
 	block_manager.load_level(data)
 	robot.reset_to(data.player_start)
-	robot.set_meta("level_done", false)
-	_level_complete = false
 	run_button.disabled = false
 	
+	_loading_alt_blueprint = false
 	
 func _show_level_complete_popup() -> void:
 	var popup = LevelCompleteScreen.instantiate()
@@ -1905,4 +1916,3 @@ func _show_ending_screen() -> void:
 	var ending = EndingScreen.instantiate()
 	$UI.add_child(ending)
 	ending.setup(_attempt_counts)  # Pass the attempt counts dictionary
-	
