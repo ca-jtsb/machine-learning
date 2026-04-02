@@ -39,6 +39,7 @@ const EndingScreen = preload("res://scenes/ending_screen.tscn")
 var _attempt_counts  : Dictionary = {}   # key: display label → int
 var _current_attempt_key : String = "" 
 var _loading_alt_blueprint : bool = false
+var _winning_actions : Dictionary = {}
 
 const IF_ELSE_UNLOCK_FROM_LEVEL : int = 0
 
@@ -982,7 +983,10 @@ func _on_level_complete() -> void:
 	run_button.disabled = true
 	_clear_highlights()
 	robot.set_meta("level_done", true)
-
+	if current_level_index < 6 and not _is_if_else_mode:  # Phase 1 = indices 0-5
+		_winning_actions[_current_level_name] = total_actions_taken
+		print("DEBUG: Saved winning actions for ", _current_level_name, " = ", total_actions_taken)
+		print("DEBUG: _winning_actions = ", _winning_actions)
 	# During alt demo: reveal Continue button — do NOT reset or re-enable run.
 	# The robot stays at the exit so the player sees the success clearly.
 	# Pressing Continue is the only next action available.
@@ -1830,14 +1834,14 @@ func _show_loop_count_popup() -> void:
 		btn.custom_minimum_size = Vector2(35, 35)
 		btn.add_theme_font_size_override("font_size", 14)
 		var btn_style := StyleBoxFlat.new()
-		btn_style.bg_color = Color(0.1333, 0.9294, 0.1725, 1.0)
+		btn_style.bg_color = Color("#00A7D1")
 		btn_style.corner_radius_top_left = 5
 		btn_style.corner_radius_top_right = 5
 		btn_style.corner_radius_bottom_left = 5
 		btn_style.corner_radius_bottom_right = 5
 		btn.add_theme_stylebox_override("normal", btn_style)
 		var btn_hover := btn_style.duplicate()
-		btn_hover.bg_color = Color(0.2431, 0.9373, 0.2745, 1.0)
+		btn_hover.bg_color = Color("007fa0ff")
 		btn.add_theme_stylebox_override("hover", btn_hover)
 		btn.add_theme_color_override("font_color", Color.WHITE)
 		btn.pressed.connect(func():
@@ -1915,4 +1919,4 @@ func _update_action_button_visuals() -> void:
 func _show_ending_screen() -> void:
 	var ending = EndingScreen.instantiate()
 	$UI.add_child(ending)
-	ending.setup(_attempt_counts)  # Pass the attempt counts dictionary
+	ending.setup(_attempt_counts, _winning_actions) # Pass the attempt counts dictionary

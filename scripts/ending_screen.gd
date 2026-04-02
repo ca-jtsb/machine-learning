@@ -1,5 +1,5 @@
 extends CanvasLayer
-
+var _winning_actions : Dictionary = {}
 # ── Dialogue steps shown before the log is revealed ───────────────────────────
 const ENDING_DIALOGUE : Array[Dictionary] = [
 	{ "text": "..." },
@@ -34,8 +34,9 @@ var _full_text      : String = ""
 @onready var _log_vbox     : VBoxContainer  = $LogPanel/Margin/OuterVBox/ScrollContainer/LogVBox
 @onready var _menu_btn     : Button         = $LogPanel/Margin/OuterVBox/MenuBtn
 
-func setup(attempt_counts: Dictionary) -> void:
+func setup(attempt_counts: Dictionary, winning_actions: Dictionary) -> void:
 	_attempt_counts = attempt_counts
+	_winning_actions = winning_actions  # ⭐ Store winning actions
 	_dialogue_index = 0
 	_log_panel.visible = false
 	_dialogue_box.visible = true
@@ -89,7 +90,7 @@ func _build_log() -> void:
 	_add_phase_header("— Phase 1: Sequence Programming —")
 	for lvl_name in PHASE1_NAMES:
 		var attempts : int = _attempt_counts.get(lvl_name, 0) as int
-		_add_row(lvl_name, attempts)
+		_add_row(lvl_name, attempts, true)  # ⭐ is_phase1 = true
 
 	_add_separator()
 
@@ -98,7 +99,7 @@ func _build_log() -> void:
 	for lvl_name in PHASE2_NAMES:
 		if _attempt_counts.has(lvl_name):
 			var attempts : int = _attempt_counts.get(lvl_name, 0) as int
-			_add_row(lvl_name, attempts)
+			_add_row(lvl_name, attempts, false)  # ⭐ is_phase1 = false
 
 	_add_separator()
 
@@ -107,7 +108,7 @@ func _build_log() -> void:
 	for v in _attempt_counts.values():
 		total += v as int
 	_add_total_row(total)
-
+	
 func _add_section_header(txt: String) -> void:
 	var lbl := Label.new()
 	lbl.text = txt
@@ -124,7 +125,7 @@ func _add_phase_header(txt: String) -> void:
 	lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_log_vbox.add_child(lbl)
 
-func _add_row(lvl_name: String, attempts: int) -> void:
+func _add_row(lvl_name: String, attempts: int, is_phase1: bool = false) -> void:
 	var row := HBoxContainer.new()
 	row.add_theme_constant_override("separation", 8)
 
@@ -135,6 +136,11 @@ func _add_row(lvl_name: String, attempts: int) -> void:
 	name_lbl.add_theme_color_override("font_color", Color(0.88, 0.88, 0.88))
 	row.add_child(name_lbl)
 
+	var info_vbox := VBoxContainer.new()
+	info_vbox.alignment = BoxContainer.ALIGNMENT_END
+	row.add_child(info_vbox)
+
+	# Failed attempts label
 	var att_lbl := Label.new()
 	var color : Color
 	if attempts == 0:
@@ -149,10 +155,21 @@ func _add_row(lvl_name: String, attempts: int) -> void:
 	att_lbl.add_theme_font_size_override("font_size", 13)
 	att_lbl.add_theme_color_override("font_color", color)
 	att_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	row.add_child(att_lbl)
+	info_vbox.add_child(att_lbl)
+
+	# ⭐ Phase 1: Show winning action count
+	if is_phase1 and _winning_actions.has(lvl_name):
+		var actions := _winning_actions[lvl_name] as int
+		var max_actions := _get_max_actions(lvl_name)
+		var action_lbl := Label.new()
+		action_lbl.text = "Win: %d/%d actions" % [actions, max_actions]
+		action_lbl.add_theme_font_size_override("font_size", 11)
+		action_lbl.add_theme_color_override("font_color", Color(0.6, 0.8, 1.0))
+		action_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+		info_vbox.add_child(action_lbl)
 
 	_log_vbox.add_child(row)
-
+	
 func _add_total_row(total: int) -> void:
 	var row := HBoxContainer.new()
 
@@ -171,6 +188,16 @@ func _add_total_row(total: int) -> void:
 	row.add_child(val)
 
 	_log_vbox.add_child(row)
+
+func _get_max_actions(lvl_name: String) -> int:
+	match lvl_name:
+		"Level 1": return 5
+		"Level 2": return 10
+		"Level 3": return 8
+		"Level 4": return 12
+		"Level 5": return 10
+		"Level 6": return 14
+		_: return 8
 
 func _add_separator() -> void:
 	_log_vbox.add_child(HSeparator.new())

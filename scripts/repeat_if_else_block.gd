@@ -42,7 +42,7 @@ const COND_LABELS  : Array[String] = ["free",     "obstacle"]
 
 # Actions — just emoji + 1-2 chars
 const ACT_OPTIONS  : Array[String] = ["move_up",  "move_down", "move_left", "move_right", "attack"]
-const ACT_LABELS   : Array[String] = ["MOVE UP ↑",        "MOVE DOWN ↓",         "MOVE LEFT ←",         "MOVE RIGHT →",           "⚔"]
+const ACT_LABELS   : Array[String] = ["MOVE UP ↑",        "MOVE DOWN ↓",         "MOVE LEFT ←",         "MOVE RIGHT →",           "ATTACK ⚔"]
 
 const COLOR_OUTER : Color = Color("#00A7D1")
 const COLOR_INNER : Color = Color("#00CCFF")
